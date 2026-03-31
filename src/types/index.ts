@@ -42,9 +42,20 @@ export type Usuario = {
   nombre: string;
   numeroIdentificacion: string;
   email: string;
-  numeroTelefono: string;
-  direccion: string;
+  numeroTelefono?: string;
+  direccion?: string;
   fechaRegistro: string;
+  isAdmin?: boolean;
+};
+
+// Interfaz para plantilla de notificación
+export type NotificationTemplate = {
+  id: string;
+  name: string;
+  icon: string;
+  subject: string;
+  body: string;
+  variables: string[];
 };
 
 // Props base para pantallas

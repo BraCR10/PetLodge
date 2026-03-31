@@ -6,11 +6,13 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Switch,
 } from 'react-native';
 import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { Usuario, ScreenProps } from '@/src/types';
 import { useAuth } from '@/src/context/AuthContext';
+import { Colors, Spacing } from '@/src/utils/theme';
 import { styles } from './LoginScreen.styles';
 
 export const LoginScreen: React.FC<ScreenProps> = ({ navigation }) => {
@@ -20,6 +22,7 @@ export const LoginScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const validateForm = () => {
     let isValid = true;
@@ -49,16 +52,18 @@ export const LoginScreen: React.FC<ScreenProps> = ({ navigation }) => {
     // For now, create a hardcoded user from the entered email
     const hardcodedUser: Usuario = {
       id: 'user-1',
-      nombre: 'Juan Pérez',
+      nombre: isAdmin ? 'Admin User' : 'Juan Pérez',
       numeroIdentificacion: '123456789',
       email: email,
       numeroTelefono: '+506 2234 5678',
       direccion: 'Calle Principal 123, San José',
       fechaRegistro: new Date().toISOString().split('T')[0],
+      isAdmin: isAdmin,
     };
 
     setUser(hardcodedUser);
-    navigation.getParent()?.replace('User');
+    const destination = isAdmin ? 'Admin' : 'User';
+    navigation.getParent()?.replace(destination);
   };
 
   return (
@@ -100,6 +105,29 @@ export const LoginScreen: React.FC<ScreenProps> = ({ navigation }) => {
               error={passwordError}
               required
             />
+
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingVertical: Spacing.md,
+              paddingHorizontal: Spacing.md,
+              backgroundColor: Colors.surface,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: Colors.border,
+              marginTop: Spacing.md,
+            }}>
+              <Text style={{
+                fontSize: 14,
+                color: Colors.text,
+                fontWeight: '500',
+              }}>Login as Admin</Text>
+              <Switch
+                value={isAdmin}
+                onValueChange={setIsAdmin}
+              />
+            </View>
           </View>
 
           <Button

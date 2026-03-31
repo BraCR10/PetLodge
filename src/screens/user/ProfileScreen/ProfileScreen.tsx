@@ -89,23 +89,27 @@ export const ProfileScreen: React.FC<ScreenProps> = ({ navigation }) => {
                 <Text style={styles.infoLabel}>Correo electrónico</Text>
                 <Text style={styles.infoValue}>{user.email}</Text>
               </View>
-              <View style={styles.divider} />
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Número de teléfono</Text>
-                <Text style={styles.infoValue}>{user.numeroTelefono}</Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Dirección</Text>
-                <Text style={styles.infoValue}>{user.direccion}</Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Miembro desde</Text>
-                <Text style={styles.infoValue}>
-                  {new Date(user.fechaRegistro).toLocaleDateString('es-ES')}
-                </Text>
-              </View>
+              {!user.isAdmin && (
+                <>
+                  <View style={styles.divider} />
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Número de teléfono</Text>
+                    <Text style={styles.infoValue}>{user.numeroTelefono}</Text>
+                  </View>
+                  <View style={styles.divider} />
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Dirección</Text>
+                    <Text style={styles.infoValue}>{user.direccion}</Text>
+                  </View>
+                  <View style={styles.divider} />
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Miembro desde</Text>
+                    <Text style={styles.infoValue}>
+                      {new Date(user.fechaRegistro).toLocaleDateString('es-ES')}
+                    </Text>
+                  </View>
+                </>
+              )}
             </View>
           </Card>
         </View>
