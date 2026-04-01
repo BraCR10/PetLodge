@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { betterAuth } from 'better-auth';
 import { bearer } from 'better-auth/plugins';
 import { Pool } from 'pg';
@@ -9,6 +10,7 @@ url.searchParams.set('options', '-c search_path=neon_auth');
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
+  logger: { level: 'error' },
   database: new Pool({ connectionString: url.toString() }),
   emailAndPassword: {
     enabled: true,
