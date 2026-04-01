@@ -86,6 +86,7 @@ All routes require a valid JWT bearer token (enforced globally by `SessionGuard`
 - [ ] Create `StorageService`: wraps `S3Client` from `@aws-sdk/client-s3`.
   - `upload(buffer, mimetype, filename)`: uploads to the configured S3 bucket using `PutObjectCommand` and returns the public URL.
   - `delete(key)`: removes the object from the bucket using `DeleteObjectCommand`.
+- [ ] In `PetService.toResponse()`, rename `tamano` → `tamaño` before returning (the DB column strips the accent; the frontend `Mascota` type uses the accented form).
 - [ ] `POST /pets`: Accept all `Mascota` fields except `id` and `foto`. `condicionesMedicas`, `numeroVeterinario`, and `cuidadosEspeciales` default to empty string if not provided. Return the created `Mascota`.
 - [ ] `GET /pets`: Return all pets belonging to the authenticated user. Response is an array of `Mascota`.
 - [ ] `GET /pets/:id`: Return a single pet. Throw `404` if not found. Throw `403` if the pet does not belong to the current user.
