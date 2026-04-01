@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum TipoNotificacion {
+  REGISTRO_USUARIO
+  CONFIRMACION_RESERVA
+  MODIFICACION_RESERVA
+  INICIO_HOSPEDAJE
+  FIN_HOSPEDAJE
+  ESTADO_MASCOTA
+}
+
+// ---------------------------------------------------------------------------
+// Models
+// ---------------------------------------------------------------------------
+
+model User {
+  id                   String            @id @default(uuid())
+  nombre               String
+  numeroIdentificacion String            @unique
+  email                String            @unique
+  numeroTelefono       String?
+  direccion            String?
+  password             String
+  isAdmin              Boolean           @default(false)
+  isActive             Boolean           @default(true)
+  fechaRegistro        DateTime          @default(now())
+  pets                 Pet[]
+  reservations         Reservation[]
+  notificationLogs     NotificationLog[]
+}
+
+model Pet {
+  // tipo:   perro | gato | conejo | pajaro | otro
+  // sexo:   macho | hembra
+  // tamano: pequeno | mediano | grande  (accent stripped for DB identifier)
+  id                  String        @id @default(uuid())
+  nombre              String
+  tipo                String
+  raza                String
+  edad                Int
+  sexo                String
+  tamano              String
+  estadoVacunacion    Boolean       @default(false)
+  condicionesMedicas  String        @default("")
+  numeroVeterinario   String        @default("")
+  cuidadosEspeciales  String        @default("")
+  foto                String?
+  userId              String
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reservations        Reservation[]
+}
+
+model Room {
+  // tipo: estandar | especial
+  id           String        @id @default(uuid())
+  numero       String        @unique
+  tipo         String
+  isAvailable  Boolean       @default(true)
+  reservations Reservation[]
+}
+
+model Reservation {
+  // tipoHospedaje:        estandar | especial
+  // serviciosAdicionales: bano | paseo | alimentacion especial
+  // estado:               confirmada | en progreso | completada | cancelada
+  id                   String            @id @default(uuid())
+  fechaEntrada         DateTime
+  fechaSalida          DateTime
+  tipoHospedaje        String
+  serviciosAdicionales String[]
+  estado               String            @default("confirmada")
+  fechaCreacion        DateTime          @default(now())
+  userId               String
+  user                 User              @relation(fields: [userId], references: [id])
+  mascotaId            String
+  pet                  Pet               @relation(fields: [mascotaId], references: [id])
+  habitacionId         String
+  room                 Room              @relation(fields: [habitacionId], references: [id])
+  notificationLogs     NotificationLog[]
+}
+
+model NotificationTemplate {
+  id        String             @id @default(uuid())
+  tipo      TipoNotificacion   @unique
+  name      String
+  subject   String
+  body      String
+  variables String[]
+  logs      NotificationLog[]
+}
+
+model NotificationLog {
+  id         String               @id @default(uuid())
+  tipo       TipoNotificacion
+  enviado    Boolean              @default(false)
+  error      String?
+  fechaEnvio DateTime             @default(now())
+  userId     String
+  user       User                 @relation(fields: [userId], references: [id])
+  reservaId  String?
+  reserva    Reservation?         @relation(fields: [reservaId], references: [id])
+  templateId String
+  template   NotificationTemplate @relation(fields: [templateId], references: [id])
+}

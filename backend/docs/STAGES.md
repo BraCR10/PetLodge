@@ -5,24 +5,24 @@ Stages 3, 4, and 5 can be developed in parallel once Stage 2 is complete.
 
 ---
 
-## Stage 1 — Foundation
+## Stage 1 — Foundation ✅
 
 **Goal:** NestJS server running, connected to Neon via Prisma, with Swagger accessible.
 
-- [ ] Run `nest new .` inside `backend/` with TypeScript and npm.
-- [ ] Install dependencies:
-  `@nestjs/config`, `prisma`, `@prisma/client`, `@nestjs/swagger`, `swagger-ui-express`,
-  `class-validator`, `class-transformer`, `bcrypt`, `@types/bcrypt`,
-  `@nestjs/jwt`, `@nestjs/passport`, `passport`, `passport-jwt`, `passport-local`,
-  `@types/passport-jwt`, `@types/passport-local`,
-  `nodemailer`, `@types/nodemailer`, `@supabase/supabase-js`.
-- [ ] Create `.env` and `.env.example` at the root of `backend/` with all required variables (see README).
-- [ ] Register `ConfigModule.forRoot({ isGlobal: true })` in `AppModule` so env vars are available across all modules without re-importing.
-- [ ] Write the full Prisma schema with all models and enums. Set `provider = "postgresql"` and `url = env("DATABASE_URL")`.
-- [ ] Run `npx prisma migrate dev --name init` to apply the schema to the Neon database.
-- [ ] Create `PrismaService`: extends `PrismaClient`, calls `$connect()` on `OnModuleInit` and `$disconnect()` on `OnModuleDestroy`.
-- [ ] Create `PrismaModule`: declares and exports `PrismaService`, marked `@Global()` so no other module needs to import it.
-- [ ] Configure `main.ts`: global `ValidationPipe` with `whitelist: true` and `forbidNonWhitelisted: true`, `enableCors()`, and Swagger setup at `/api` with Bearer auth support.
+- [x] Run `nest new .` inside `backend/` with TypeScript and npm.
+- [x] Install dependencies:
+  `@nestjs/config`, `prisma`, `@prisma/client`, `@prisma/adapter-neon`, `@neondatabase/serverless`,
+  `@nestjs/swagger`, `swagger-ui-express`, `class-validator`, `class-transformer`,
+  `bcrypt`, `@types/bcrypt`, `@nestjs/jwt`, `@nestjs/passport`, `passport`, `passport-jwt`,
+  `passport-local`, `@types/passport-jwt`, `@types/passport-local`,
+  `nodemailer`, `@types/nodemailer`, `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`.
+- [x] Create `.env` and `.env.example` with all required variables (see README).
+- [x] Register `ConfigModule.forRoot({ isGlobal: true })` in `AppModule`.
+- [x] Write the full Prisma schema with all models and enums. Datasource URL configured via `prisma.config.ts`.
+- [x] Run `npx prisma migrate dev --name init` to apply the schema to Neon.
+- [x] Create `PrismaService`: extends `PrismaClient` with `PrismaNeonHttp` adapter, calls `$connect()` on `OnModuleInit` and `$disconnect()` on `OnModuleDestroy`.
+- [x] Create `PrismaModule`: declares and exports `PrismaService`, marked `@Global()`.
+- [x] Configure `main.ts`: global `ValidationPipe` with `whitelist: true` and `forbidNonWhitelisted: true`, `enableCors()`, and Swagger at `/api` with Bearer auth.
 
 **Done when:** Server starts without errors and Swagger UI loads at `/api`.
 
@@ -63,19 +63,19 @@ Stages 3, 4, and 5 can be developed in parallel once Stage 2 is complete.
 
 ## Stage 4 — Pets
 
-**Goal:** Users can manage their pets and upload a photo per pet to Supabase Storage.
+**Goal:** Users can manage their pets and upload a photo per pet to AWS S3.
 
-- [ ] Create `StorageService`: wraps the Supabase client.
-  - `upload(buffer, mimetype, filename)`: uploads to the configured bucket and returns the public URL.
-  - `delete(url)`: extracts the file path from the URL and removes it from the bucket.
+- [ ] Create `StorageService`: wraps `S3Client` from `@aws-sdk/client-s3`.
+  - `upload(buffer, mimetype, filename)`: uploads to the configured S3 bucket using `PutObjectCommand` and returns the public URL.
+  - `delete(key)`: removes the object from the bucket using `DeleteObjectCommand`.
 - [ ] `POST /pets`: Accept all `Mascota` fields except `id` and `foto`. `condicionesMedicas`, `numeroVeterinario`, and `cuidadosEspeciales` default to empty string if not provided. Return the created `Mascota`.
 - [ ] `GET /pets`: Return all pets belonging to the authenticated user. Response is an array of `Mascota`.
 - [ ] `GET /pets/:id`: Return a single pet. Throw `404` if not found. Throw `403` if the pet does not belong to the current user.
 - [ ] `PATCH /pets/:id`: All fields optional. Verify ownership before updating. Return the updated `Mascota`.
 - [ ] `DELETE /pets/:id`: Verify ownership. If `foto` exists, call `StorageService.delete` first. Delete the record.
-- [ ] `POST /pets/:id/photo`: Accept `multipart/form-data` with a single file field. Verify ownership. If pet already has a photo, delete the old one from Supabase before uploading the new one. Update `foto` with the returned URL. Return the updated `Mascota`.
+- [ ] `POST /pets/:id/photo`: Accept `multipart/form-data` with a single file field. Verify ownership. If the pet already has a photo, delete the old S3 object before uploading the new one. Update `foto` with the returned URL. Return the updated `Mascota`.
 
-**Done when:** Pet CRUD works and the uploaded photo URL is persisted and publicly accessible.
+**Done when:** Pet CRUD works and the uploaded photo URL is persisted and publicly accessible via S3.
 
 ---
 
@@ -96,7 +96,7 @@ Stages 3, 4, and 5 can be developed in parallel once Stage 2 is complete.
 **Goal:** Users can create, view, modify, and cancel reservations with full business rule enforcement.
 
 - [ ] `POST /reservations`:
-  - Accept: `mascotaId`, `habitacionId`, `fechaEntrada`, `fechaSalida`, `tipoHospedaje` (`estandar|especial`), `serviciosAdicionales?` (array of `baño|paseo|alimentacion especial`).
+  - Accept: `mascotaId`, `habitacionId`, `fechaEntrada`, `fechaSalida`, `tipoHospedaje` (`estandar|especial`), `serviciosAdicionales?` (array of `bano|paseo|alimentacion especial`).
   - Throw `403` if `mascotaId` does not belong to the current user.
   - Throw `400` if `serviciosAdicionales` is non-empty and `tipoHospedaje` is `estandar`.
   - Throw `409` if the room has an overlapping active reservation (same overlap query as Stage 5).
@@ -122,11 +122,11 @@ Stages 3, 4, and 5 can be developed in parallel once Stage 2 is complete.
     2. Load the user's email and `nombre` from DB.
     3. Replace all `{{key}}` placeholders in `subject` and `body` using the `variables` map.
     4. Send the email via Nodemailer using SMTP credentials from env.
-    5. Write a `NotificationLog` with `sent = true` on success, or `sent = false` and the error message on failure. Never throw — errors must be logged and execution must continue.
+    5. Write a `NotificationLog` with `enviado = true` on success, or `enviado = false` and the error message on failure. Never throw — errors must be logged and execution must continue.
   - `findAll()`: return all templates as `NotificationTemplate[]`.
   - `findOne(id)`: return one template by id, throw `404` if not found.
   - `update(id, dto)`: update `subject` and/or `body`.
-  - `findLogs(userId)`: return send history for the user, ordered by `sentAt` descending.
+  - `findLogs(userId)`: return send history for the user, ordered by `fechaEnvio` descending.
 - [ ] Wire `NotificationsService` into `AuthService` (call on register) and `ReservationsService` (call on create and update).
 - [ ] `GET /notifications/templates`: return all templates.
 - [ ] `GET /notifications/templates/:id`: return one template.
@@ -141,7 +141,7 @@ Stages 3, 4, and 5 can be developed in parallel once Stage 2 is complete.
 ## Stage Dependencies
 
 ```
-Stage 1 — Foundation
+Stage 1 — Foundation ✅
   └── Stage 2 — Auth
         ├── Stage 3 — Users          (parallel)
         ├── Stage 4 — Pets           (parallel)
