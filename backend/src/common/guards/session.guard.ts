@@ -5,15 +5,22 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { auth } from '../../auth/auth.config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+
+interface JwtPayload {
+  sub: string;
+  email: string;
+  isAdmin: boolean;
+}
 
 @Injectable()
 export class SessionGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
+    private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -26,30 +33,38 @@ export class SessionGuard implements CanActivate {
     if (isPublic) return true;
 
     const request = context.switchToHttp().getRequest<Request>();
+    const token = this.extractBearer(request);
 
-    const session = await auth.api.getSession({
-      headers: new Headers(request.headers as Record<string, string>),
-    });
+    if (!token) {
+      throw new UnauthorizedException('No autenticado');
+    }
 
-    if (!session?.user?.id) {
-      throw new UnauthorizedException();
+    let payload: JwtPayload;
+    try {
+      payload = this.jwtService.verify<JwtPayload>(token);
+    } catch {
+      throw new UnauthorizedException('Token inválido o expirado');
     }
 
     const user = await this.prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: payload.sub },
     });
 
     if (!user || !user.isActive) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Cuenta no encontrada o inactiva');
     }
 
-    // role comes from neon_auth.user.role (single source of truth)
-    const sessionUser = session.user as Record<string, unknown>;
     (request as any).currentUser = {
       ...user,
-      role: (sessionUser['role'] as string) ?? 'user',
+      role: user.isAdmin ? 'admin' : 'user',
     };
 
     return true;
+  }
+
+  private extractBearer(request: Request): string | null {
+    const authorization = request.headers.authorization;
+    if (!authorization?.startsWith('Bearer ')) return null;
+    return authorization.slice(7);
   }
 }

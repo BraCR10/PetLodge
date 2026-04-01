@@ -11,10 +11,10 @@ Stages 3, 4, and 5 can be developed in parallel once Stage 2 is complete.
 
 - [x] Run `nest new .` inside `backend/` with TypeScript and npm.
 - [x] Install dependencies:
-  `@nestjs/config`, `prisma`, `@prisma/client`, `@prisma/adapter-neon`, `@neondatabase/serverless`,
+  `@nestjs/config`, `@nestjs/jwt`, `prisma`, `@prisma/client`, `@prisma/adapter-neon`, `@neondatabase/serverless`,
   `@nestjs/swagger`, `swagger-ui-express`, `class-validator`, `class-transformer`,
-  `better-auth`, `pg`, `@types/pg`, `@thallesp/nestjs-better-auth`,
-  `nodemailer`, `@types/nodemailer`, `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`.
+  `bcryptjs`, `@types/bcryptjs`, `nodemailer`, `@types/nodemailer`,
+  `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`.
 - [x] Create `.env` and `.env.example` with all required variables (see README).
 - [x] Register `ConfigModule.forRoot({ isGlobal: true })` in `AppModule`.
 - [x] Write the full Prisma schema with all models and enums. Datasource URL configured via `prisma.config.ts`.
@@ -24,6 +24,7 @@ Stages 3, 4, and 5 can be developed in parallel once Stage 2 is complete.
 - [x] Configure `main.ts`: global `ValidationPipe` with `whitelist: true` and `forbidNonWhitelisted: true`, `enableCors()`, and Swagger at `/api` with Bearer auth.
 - [x] Create `LoggerModule` (global): Winston-backed logger with colored output in development and structured JSON in production. Replaces NestJS default logger via `WINSTON_MODULE_NEST_PROVIDER`.
 - [x] Create `LoggingInterceptor` (global): logs every HTTP request with method, path, status code, duration, and user ID.
+- [x] Create `HttpExceptionFilter` (global): normalizes all error responses to `{ statusCode, message }`. 4xx errors surface the intended message in Spanish; 5xx errors return a generic message and log full details internally.
 
 **Done when:** Server starts without errors and Swagger UI loads at `/api`.
 
@@ -31,31 +32,28 @@ Stages 3, 4, and 5 can be developed in parallel once Stage 2 is complete.
 
 ## Stage 2 — Auth
 
-**Goal:** Users can register and log in using Better Auth backed by `neon_auth` schema. All protected routes require a valid bearer token. Roles are owned by `neon_auth.user.role`.
+**Goal:** Users can register and log in. All protected routes require a valid JWT bearer token.
 
-**Auth layer:** Better Auth (`better-auth`) manages `neon_auth.user`, `neon_auth.account` (hashed password), and `neon_auth.session`. The `bearer()` plugin enables `Authorization: Bearer <token>` for mobile clients. Our `public.User` stores PetLodge-specific fields and shares the same UUID as `neon_auth.user`.
+**Auth layer:** Passwords are hashed with `bcryptjs` (cost factor 12) and stored in `public.User.password`. On login or register, a signed JWT is issued containing `{ sub, email, isAdmin }` with a 7-day expiry. The JWT secret is read from `JWT_SECRET` env variable.
 
-- [x] Configure Better Auth in `src/auth/auth.config.ts`: `emailAndPassword` enabled, `bearer()` plugin, `pg.Pool` pointing to Neon with `search_path=neon_auth`.
 - [x] `POST /auth/register`:
-  - Accept: `nombre`, `numeroIdentificacion`, `email`, `password` (min 6 chars), `numeroTelefono?`, `direccion?`.
-  - Throw `409` if `email` or `numeroIdentificacion` already exists in `public.User`.
-  - Call `auth.api.signUpEmail()` → creates `neon_auth.user` + `neon_auth.account` with hashed password.
-  - Create `public.User` using the returned `neon_auth.user.id` as the primary key.
-  - Return `{ user: Usuario, access_token: string }`.
+  - Accept: `nombre`, `numeroIdentificacion`, `email`, `password` (min 8 chars), `numeroTelefono?`, `direccion?`.
+  - Throw `409` if `email` or `numeroIdentificacion` already exists.
+  - Hash password with bcrypt, create `public.User`, return `{ user: Usuario, access_token: string }`.
 - [x] `POST /auth/login`:
   - Accept: `email`, `password`.
-  - Call `auth.api.signInEmail()` → Better Auth validates against `neon_auth.account`.
-  - Throw `401` if credentials are wrong or `public.User.isActive` is false.
+  - Throw `401` if user not found, `isActive` is false, or password does not match.
   - Return `{ user: Usuario, access_token: string }`.
-- [x] Create `SessionGuard` (global): calls `auth.api.getSession()` with the request headers. Validates the bearer token, loads `public.User` from DB, attaches `{ ...user, role: session.user.role }` to `req.currentUser`. Use `@Public()` decorator to bypass.
-- [x] Create `RolesGuard` (global, runs after `SessionGuard`): reads `@Roles(...roles)` metadata, checks `req.currentUser.role`. Throws `403` if role is not in the allowed list.
+- [x] Register `JwtModule` globally in `AppModule` with `JWT_SECRET` and `expiresIn: '7d'`.
+- [x] Create `SessionGuard` (global): extracts `Authorization: Bearer <token>`, verifies JWT, loads `public.User`, attaches `{ ...user, role: 'admin' | 'user' }` to `req.currentUser`. Use `@Public()` to bypass.
+- [x] Create `RolesGuard` (global, runs after `SessionGuard`): reads `@Roles(...roles)` metadata, checks `req.currentUser.role`. Throws `403` if role is not allowed.
 - [x] Create `@CurrentUser()` param decorator: extracts `req.currentUser` (type `AuthenticatedUser = User & { role: string }`).
 - [x] Create `@Roles()` decorator: `@Roles('admin')` restricts a route to admin users.
 - [x] Create `@Public()` decorator: bypasses `SessionGuard` for auth routes and health checks.
 
-**Role values in `neon_auth.user.role`:**
-- `'user'` — default for all registered users
-- `'admin'` — set manually in Neon Auth dashboard or via admin API
+**Role values (`User.isAdmin`):**
+- `false` → role `'user'` — default for all registered users
+- `true` → role `'admin'` — set directly in the database
 
 **Done when:** Login returns a bearer token that works in Swagger's Authorize dialog. Protected routes return `401` without a token and `403` with a non-admin token on admin-only routes.
 
