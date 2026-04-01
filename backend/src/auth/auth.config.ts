@@ -8,6 +8,7 @@ const url = new URL(process.env.DATABASE_URL as string);
 url.searchParams.set('options', '-c search_path=neon_auth');
 
 export const auth = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET,
   database: new Pool({ connectionString: url.toString() }),
   emailAndPassword: {
     enabled: true,

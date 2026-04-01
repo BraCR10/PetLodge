@@ -9,7 +9,7 @@ REST API for the PetLodge pet hotel management system.
 | Framework  | NestJS 11 + TypeScript              |
 | ORM        | Prisma 7 + Neon adapter             |
 | Database   | PostgreSQL (Neon)                   |
-| Auth       | JWT + Passport                      |
+| Auth       | Better Auth + bearer plugin         |
 | Email      | Nodemailer                          |
 | Storage    | AWS S3                              |
 | Docs       | Swagger / OpenAPI 3                 |
@@ -19,7 +19,7 @@ REST API for the PetLodge pet hotel management system.
 
 | Module        | Responsibility                                        |
 |---------------|-------------------------------------------------------|
-| auth          | Register, login, JWT issuance                         |
+| auth          | Register, login, bearer token issuance via Better Auth |
 | users         | User profile read and update                          |
 | pets          | Pet CRUD and photo upload                             |
 | rooms         | Room listing and date-range availability              |
@@ -32,21 +32,23 @@ REST API for the PetLodge pet hotel management system.
 
 ```env
 DATABASE_URL=
-
-JWT_SECRET=
-JWT_EXPIRES_IN=7d
+BETTER_AUTH_SECRET=
 
 AWS_ENDPOINT=
 AWS_REGION=
 S3_ID=
 S3_SECRET_KEY=
-S3_BUCKET=pet-photos
+S3_BUCKET=
+
+AVATAR_API=https://api.dicebear.com/7.x/initials/svg?seed=
 
 MAIL_HOST=
 MAIL_PORT=587
 MAIL_USER=
 MAIL_PASS=
 MAIL_FROM=
+
+PORT=3000
 ```
 
 ## Running Locally
