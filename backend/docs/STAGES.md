@@ -87,12 +87,13 @@ All routes require a valid JWT bearer token (enforced globally by `SessionGuard`
   - `upload(buffer, mimetype, filename)`: uploads to the configured S3 bucket using `PutObjectCommand` and returns the public URL.
   - `delete(key)`: removes the object from the bucket using `DeleteObjectCommand`.
 - [ ] In `PetService.toResponse()`, rename `tamano` → `tamaño` before returning (the DB column strips the accent; the frontend `Mascota` type uses the accented form).
-- [ ] `POST /pets`: Accept all `Mascota` fields except `id` and `foto`. `condicionesMedicas`, `numeroVeterinario`, and `cuidadosEspeciales` default to empty string if not provided. Return the created `Mascota`.
+- [ ] `POST /pets`: Accept all `Mascota` fields except `id` and `foto`. `condicionesMedicas`, `numeroVeterinario`, and `cuidadosEspeciales` default to empty string if not provided. If no photo is uploaded, use the `AVATAR_API` env variable (Dicebear) with the pet's `nombre` as the seed to generate a default `foto` URL. Return the created `Mascota`.
 - [ ] `GET /pets`: Return all pets belonging to the authenticated user. Response is an array of `Mascota`.
 - [ ] `GET /pets/:id`: Return a single pet. Throw `404` if not found. Throw `403` if the pet does not belong to the current user.
 - [ ] `PATCH /pets/:id`: All fields optional. Verify ownership before updating. Return the updated `Mascota`.
-- [ ] `DELETE /pets/:id`: Verify ownership. If `foto` exists, call `StorageService.delete` first. Delete the record.
-- [ ] `POST /pets/:id/photo`: Accept `multipart/form-data` with a single file field. Verify ownership. If the pet already has a photo, delete the old S3 object before uploading the new one. Update `foto` with the returned URL. Return the updated `Mascota`.
+- [ ] `DELETE /pets/:id`: Verify ownership. Soft-delete by setting `isActive = false` (photo remains in S3). Return `204 No Content`.
+- [ ] Both `POST /pets` and `PATCH /pets/:id` accept `multipart/form-data`. The optional `foto` binary field handles photo upload on create and photo replacement on update (old S3 object deleted first). No separate photo endpoint — PATCH covers it.
+- [x] **Implementation Detail:** Create `NormalizeEncodingInterceptor` to handle a known issue where Swagger UI (and other clients) send `multipart/form-data` payload in Latin-1 instead of UTF-8. This interceptor must restore *mojibake* characters (e.g., `Ã±` to `ñ`) and map the incoming field `tamaño` to `tamano` so it can be processed correctly by the ASCII-safe DTO validations.
 
 **Done when:** Pet CRUD works and the uploaded photo URL is persisted and publicly accessible via S3.
 

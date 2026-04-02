@@ -2,19 +2,20 @@ model Pet {
   // tipo:   perro | gato | conejo | pajaro | otro
   // sexo:   macho | hembra
   // tamano: pequeno | mediano | grande  (accent stripped for DB identifier)
-  id                  String        @id @default(uuid())
-  nombre              String
-  tipo                String
-  raza                String
-  edad                Int
-  sexo                String
-  tamano              String
-  estadoVacunacion    Boolean       @default(false)
-  condicionesMedicas  String        @default("")
-  numeroVeterinario   String        @default("")
-  cuidadosEspeciales  String        @default("")
-  foto                String?
-  userId              String
-  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reservations        Reservation[]
+  id                 String        @id @default(uuid())
+  nombre             String
+  tipo               String
+  raza               String
+  edad               Int
+  sexo               String
+  tamano             String
+  estadoVacunacion   String        @default("")
+  condicionesMedicas String        @default("")
+  numeroVeterinario  String        @default("")
+  cuidadosEspeciales String        @default("")
+  foto               String?
+  isActive           Boolean       @default(true)
+  userId             String
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reservations       Reservation[]
 }

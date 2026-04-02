@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { StorageModule } from './storage/storage.module';
 import { LoggerModule } from './logger/logger.module';
 import { ApiModule } from './api/api.module';
 import { SessionGuard } from './common/guards/session.guard';
@@ -26,6 +27,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     }),
     LoggerModule,
     PrismaModule,
+    StorageModule,
     // Feature modules — all routes live under ApiModule
     ApiModule,
   ],

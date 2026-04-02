@@ -8,8 +8,8 @@ enum TipoNotificacion {
 }
 
 model NotificationTemplate {
-  id        String             @id @default(uuid())
-  tipo      TipoNotificacion   @unique
+  id        String            @id @default(uuid())
+  tipo      TipoNotificacion  @unique
   name      String
   subject   String
   body      String

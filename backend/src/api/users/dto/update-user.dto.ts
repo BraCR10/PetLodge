@@ -1,21 +1,6 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, Matches } from 'class-validator';
+import { PartialType, PickType } from '@nestjs/swagger';
+import { RegisterDto } from '../../auth/dto/register.dto';
 
-export class UpdateUserDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString({ message: 'El nombre no es válido' })
-  nombre?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @Matches(/^\+?[\d\s\-()]{7,20}$/, {
-    message: 'El número de teléfono no es válido',
-  })
-  numeroTelefono?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString({ message: 'La dirección no es válida' })
-  direccion?: string;
-}
+export class UpdateUserDto extends PartialType(
+  PickType(RegisterDto, ['nombre', 'numeroTelefono', 'direccion'] as const),
+) {}
