@@ -160,6 +160,11 @@ export const styles = StyleSheet.create({
   photoPlaceholderText: {
     fontSize: 40,
   },
+  errorText: {
+    color: Colors.error,
+    fontSize: 12,
+    marginTop: Spacing.xs,
+  },
   actions: {
     gap: Spacing.md,
   },

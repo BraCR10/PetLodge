@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  Switch,
   Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -33,7 +32,7 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
   const [tamaño, setTamaño] = useState<TamañoMascota>('mediano');
   
   // Medical information
-  const [estadoVacunacion, setEstadoVacunacion] = useState(false);
+  const [estadoVacunacion, setEstadoVacunacion] = useState('');
   const [condicionesMedicas, setCondicionesMedicas] = useState('');
   const [numeroVeterinario, setNumeroVeterinario] = useState('');
   
@@ -67,6 +66,12 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
     if (!raza) newErrors.raza = 'La raza es requerida';
     if (!edad) newErrors.edad = 'La edad es requerida';
     else if (isNaN(Number(edad)) || Number(edad) < 0) newErrors.edad = 'La edad debe ser un número válido';
+    
+    if (!foto) newErrors.foto = 'La foto de la mascota es requerida';
+    if (!estadoVacunacion) newErrors.estadoVacunacion = 'El estado de vacunación es requerido';
+    if (!condicionesMedicas) newErrors.condicionesMedicas = 'Las condiciones médicas son requeridas';
+    if (!numeroVeterinario) newErrors.numeroVeterinario = 'El número del veterinario es requerido';
+    if (!cuidadosEspeciales) newErrors.cuidadosEspeciales = 'Los cuidados especiales son requeridos';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -226,22 +231,21 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
             {/* Medical Information Section */}
             <Text style={styles.sectionTitle}>Información médica</Text>
 
-            <View style={styles.vacunacionContainer}>
-              <View style={styles.vacunacionLabel}>
-                <Text style={styles.label}>Estado de vacunación</Text>
-                <Text style={styles.labelText}>{estadoVacunacion ? 'Vacunado' : 'Sin vacunar'}</Text>
-              </View>
-              <Switch
-                value={estadoVacunacion}
-                onValueChange={setEstadoVacunacion}
-              />
-            </View>
+            <Input
+              label="Estado de vacunación"
+              placeholder="p. ej., Vacunado con..., Pendiente"
+              value={estadoVacunacion}
+              onChangeText={setEstadoVacunacion}
+              error={errors.estadoVacunacion}
+              multiline
+            />
 
             <Input
               label="Condiciones médicas"
               placeholder="p. ej., Diabetes, alergias"
               value={condicionesMedicas}
               onChangeText={setCondicionesMedicas}
+              error={errors.condicionesMedicas}
               multiline
               numberOfLines={3}
             />
@@ -251,6 +255,7 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
               placeholder="p. ej., +506 2234-5678"
               value={numeroVeterinario}
               onChangeText={setNumeroVeterinario}
+              error={errors.numeroVeterinario}
               keyboardType="phone-pad"
             />
 
@@ -262,6 +267,7 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
               placeholder="p. ej., Requiere paseos diarios, baños frecuentes"
               value={cuidadosEspeciales}
               onChangeText={setCuidadosEspeciales}
+              error={errors.cuidadosEspeciales}
               multiline
               numberOfLines={3}
             />
@@ -277,6 +283,7 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
                   size="md"
                   style={styles.photoButton}
                 />
+                {errors.foto && <Text style={styles.errorText}>{errors.foto}</Text>}
               </View>
               <View style={styles.photoPreviewContainer}>
                 {foto ? (

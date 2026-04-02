@@ -46,10 +46,19 @@ export const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: Spacing.md,
   },
+  petInfo: {
+    flex: 1,
+  },
   petName: {
     ...Typography.h4,
     fontWeight: '700',
     color: Colors.primary,
+    marginBottom: Spacing.xs,
+  },
+  specialBadge: {
+    ...Typography.caption,
+    color: Colors.warning,
+    fontWeight: '600',
   },
   status: {
     paddingHorizontal: Spacing.sm,

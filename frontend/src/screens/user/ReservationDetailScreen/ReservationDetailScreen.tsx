@@ -3,8 +3,15 @@ import { View, Text, SafeAreaView, ScrollView } from 'react-native';
 import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { Colors, Spacing, Typography } from '@/src/utils/theme';
-import { Reserva, EstadoReserva, ScreenPropsWithRoute } from '@/src/types';
+import { Reserva, EstadoReserva, Habitacion, ScreenPropsWithRoute } from '@/src/types';
 import { styles } from './ReservationDetailScreen.styles';
+
+const habitaciones: Habitacion[] = [
+  { id: 1, name: 'Habitación Estándar A' },
+  { id: 2, name: 'Habitación Estándar B' },
+  { id: 3, name: 'Habitación Premium' },
+  { id: 4, name: 'Suite Deluxe' },
+];
 
 export const ReservationDetailScreen: React.FC<ScreenPropsWithRoute> = ({
   navigation,
@@ -101,10 +108,28 @@ export const ReservationDetailScreen: React.FC<ScreenPropsWithRoute> = ({
               <Text style={styles.value}>{reserva.fechaSalida}</Text>
             </View>
             <View style={styles.detail}>
-              <Text style={styles.label}>Número de habitación</Text>
-              <Text style={styles.value}>{reserva.habitacion}</Text>
+              <Text style={styles.label}>Habitación</Text>
+              <Text style={styles.value}>
+                {habitaciones.find(h => h.id === reserva.habitacionId)?.name || 'No disponible'}
+              </Text>
+            </View>
+            <View style={styles.detail}>
+              <Text style={styles.label}>Tipo de reserva</Text>
+              <Text style={styles.value}>
+                {reserva.esEspecial ? 'Especial' : 'Estándar'}
+              </Text>
             </View>
           </View>
+
+          {reserva.esEspecial && reserva.serviciosAdicionales && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Servicios adicionales</Text>
+              <View style={styles.detail}>
+                <Text style={styles.label}>Solicitados</Text>
+                <Text style={styles.value}>{reserva.serviciosAdicionales}</Text>
+              </View>
+            </View>
+          )}
 
           <View>
             <Text style={styles.sectionTitle}>Estado</Text>
