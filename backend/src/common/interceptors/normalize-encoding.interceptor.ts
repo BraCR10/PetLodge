@@ -27,6 +27,7 @@ const ENCODING_MAP: Record<string, string> = {
 // the correct UTF-8 form (`tamaño`) and the API form (`tamano`) are accepted.
 const FIELD_NAME_MAP: Record<string, string> = {
   tamaño: 'tamano',
+  años: 'anos',
 };
 
 const ENCODING_PATTERN = new RegExp(Object.keys(ENCODING_MAP).join('|'), 'g');

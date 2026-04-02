@@ -1,12 +1,13 @@
 model Pet {
-  // tipo:   perro | gato | conejo | pajaro | otro
+  // tipo:   perro | gato | conejo | pajaro | otro | <custom string>
   // sexo:   macho | hembra
   // tamano: pequeno | mediano | grande  (accent stripped for DB identifier)
   id                 String        @id @default(uuid())
   nombre             String
   tipo               String
   raza               String
-  edad               Int
+  anos               Int           @default(0)
+  meses              Int           @default(0)
   sexo               String
   tamano             String
   estadoVacunacion   String        @default("")

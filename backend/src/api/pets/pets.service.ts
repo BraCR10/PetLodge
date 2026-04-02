@@ -6,9 +6,13 @@ import { StorageService } from '../../storage/storage.service';
 import { CreatePetDto } from './dto/create-pet.dto';
 import { UpdatePetDto } from './dto/update-pet.dto';
 
-// Replaces the accent-stripped DB column `tamano` with `tamaño` to match the frontend Mascota type.
+// Replaces accent-stripped DB columns with accented forms to match the frontend Mascota type.
 // Excludes `userId` (internal relation key) and normalises `foto` to always be a string.
-type PetResponse = Omit<Pet, 'tamano' | 'userId' | 'foto'> & { tamaño: string; foto: string };
+type PetResponse = Omit<Pet, 'tamano' | 'anos' | 'userId' | 'foto'> & {
+  tamaño: string;
+  años: number;
+  foto: string;
+};
 
 @Injectable()
 export class PetsService {
@@ -106,11 +110,11 @@ export class PetsService {
   }
 
   private toResponse(pet: Pet): PetResponse {
-    const { tamano, userId: _userId, foto, ...rest } = pet;
+    const { tamano, anos, userId: _userId, foto, ...rest } = pet;
 
     const fotoFinal =
       foto ?? `${this.config.getOrThrow<string>('AVATAR_API')}${encodeURIComponent(rest.nombre)}`;
 
-    return { ...rest, tamaño: tamano, foto: fotoFinal };
+    return { ...rest, tamaño: tamano, años: anos, foto: fotoFinal };
   }
 }

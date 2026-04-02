@@ -6,14 +6,40 @@ import {
   IsOptional,
   IsString,
   Matches,
+  Max,
   MaxLength,
   Min,
   MinLength,
+  Validate,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  ValidationArguments,
 } from 'class-validator';
 
-const TIPOS = ['perro', 'gato', 'conejo', 'pajaro', 'otro'] as const;
 const SEXOS = ['macho', 'hembra'] as const;
 const TAMANOS = ['pequeño', 'mediano', 'grande'] as const;
+
+// Cross-field rule: anos=0 + meses=0 is never valid.
+// anos=0 + meses≥1 is allowed (young pet). anos≥1 + meses=0 is allowed (exact years).
+@ValidatorConstraint({ name: 'ageNotZero', async: false })
+class AgeNotZeroConstraint implements ValidatorConstraintInterface {
+  validate(meses: unknown, args: ValidationArguments): boolean {
+    const obj = args.object as { anos?: number };
+    const anos = obj.anos ?? 0;
+    const m = typeof meses === 'number' ? meses : 0;
+    return !(anos === 0 && m === 0);
+  }
+
+  defaultMessage(): string {
+    return 'La edad no puede ser 0 años y 0 meses';
+  }
+}
+
+const toInt = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? parseInt(value, 10) : value;
+
+const toLower = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.toLowerCase() : value;
 
 export class CreatePetDto {
   @ApiProperty({ example: 'Max' })
@@ -22,24 +48,40 @@ export class CreatePetDto {
   @MaxLength(100, { message: 'El nombre no puede exceder 100 caracteres' })
   nombre: string;
 
-  @ApiProperty({ enum: TIPOS })
-  @IsIn(TIPOS, { message: 'El tipo debe ser: perro, gato, conejo, pajaro u otro' })
+  // Known values are perro, gato, conejo, pajaro, otro — but any custom type is accepted.
+  @ApiProperty({ example: 'perro' })
+  @Transform(toLower)
+  @IsString({ message: 'El tipo de mascota es requerido' })
   tipo: string;
 
   @ApiProperty({ example: 'Golden Retriever' })
   @IsString({ message: 'La raza es requerida' })
   raza: string;
 
-  @ApiProperty({ example: 3 })
-  // multipart/form-data sends all fields as strings — transform to number before validation.
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? parseInt(value, 10) : value,
-  )
-  @IsInt({ message: 'La edad debe ser un número entero' })
-  @Min(0, { message: 'La edad no puede ser negativa' })
-  edad: number;
+  // ASCII field name — `años` with accent corrupts in multipart (same issue as tamano).
+  // Response maps back to `años`. NormalizeEncodingInterceptor also accepts the accented form.
+  @ApiProperty({ example: 2 })
+  @Transform(toInt)
+  @IsInt({ message: 'Los años deben ser un número entero' })
+  @Min(0, { message: 'Los años no pueden ser negativos' })
+  anos: number;
+
+  // Optional — defaults to 0 in DB. Required when anos=0 (pet under 1 year old).
+  // Valid range when provided: 0–11. Cross-field rule: anos=0 AND meses=0 is rejected.
+  @ApiPropertyOptional({
+    example: 6,
+    description: 'Meses adicionales (0–11). Requerido si años es 0.',
+  })
+  @IsOptional()
+  @Transform(toInt)
+  @IsInt({ message: 'Los meses deben ser un número entero' })
+  @Min(0, { message: 'Los meses no pueden ser negativos' })
+  @Max(11, { message: 'Los meses no pueden superar 11' })
+  @Validate(AgeNotZeroConstraint)
+  meses?: number;
 
   @ApiProperty({ enum: SEXOS })
+  @Transform(toLower)
   @IsIn(SEXOS, { message: 'El sexo debe ser macho o hembra' })
   sexo: string;
 
@@ -47,6 +89,7 @@ export class CreatePetDto {
   // The response maps this back to `tamaño` to match the frontend Mascota type.
   // The NormalizeEncodingInterceptor also accepts `tamaño` and maps it here automatically.
   @ApiProperty({ enum: TAMANOS })
+  @Transform(toLower)
   @IsIn(TAMANOS, { message: 'El tamaño debe ser pequeño, mediano o grande' })
   tamano: string;
 
