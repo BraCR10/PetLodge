@@ -14,27 +14,30 @@ import { styles } from './ReservationsScreen.styles';
 
 const initialReservations: Reserva[] = [
   {
-    id: 'res-1',
+    id: 1,
     nombreMascota: 'Max',
     fechaEntrada: '2026-04-01',
     fechaSalida: '2026-04-05',
-    habitacion: '1',
+    habitacionId: 1,
     estado: 'confirmada',
+    esEspecial: false,
   },
   {
-    id: 'res-2',
+    id: 2,
     nombreMascota: 'Luna',
     fechaEntrada: '2026-05-10',
     fechaSalida: '2026-05-12',
-    habitacion: '2',
+    habitacionId: 2,
     estado: 'en progreso',
+    esEspecial: true,
+    serviciosAdicionales: 'Paseo diario y baño especial',
   },
 ];
 
 export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [reservations, setReservations] = useState(initialReservations);
 
-  const handleCancelReservation = (resId: string, nombreMascota: string) => {
+  const handleCancelReservation = (resId: number, nombreMascota: string) => {
     Alert.alert(
       'Cancelar reserva',
       `¿Estás seguro de que quieres cancelar la reserva de ${nombreMascota}?`,
@@ -100,7 +103,12 @@ export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
           <View style={[styles.content, styles.contentNoVerticalPadding]}>
             <Card padding={Spacing.md} margin={0}>
               <View style={styles.cardHeader}>
-                <Text style={styles.petName}>{item.nombreMascota}</Text>
+                <View style={styles.petInfo}>
+                  <Text style={styles.petName}>{item.nombreMascota}</Text>
+                  {item.esEspecial && (
+                    <Text style={styles.specialBadge}>⭐ Reserva especial</Text>
+                  )}
+                </View>
                 <Text style={[styles.status, getStatusColor(item.estado)]}>
                   {getStatusLabel(item.estado)}
                 </Text>
@@ -116,7 +124,7 @@ export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Habitación</Text>
-                  <Text style={styles.detailValue}>{item.habitacion}</Text>
+                  <Text style={styles.detailValue}>Habitación {item.habitacionId}</Text>
                 </View>
               </View>
               {item.estado !== 'completada' && (

@@ -52,6 +52,55 @@ export const styles = StyleSheet.create({
     color: Colors.error,
     marginBottom: Spacing.md,
   },
+  roomSelector: {
+    gap: Spacing.sm,
+  },
+  roomOption: {
+    padding: Spacing.md,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    justifyContent: 'center',
+  },
+  roomOptionSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '10',
+  },
+  roomOptionText: {
+    ...Typography.body,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    marginRight: Spacing.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
+  },
+  checkboxCheck: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  checkboxLabel: {
+    ...Typography.body,
+    color: Colors.text,
+    flex: 1,
+  },
   summary: {
     backgroundColor: Colors.surface,
     padding: Spacing.lg,
@@ -69,6 +118,25 @@ export const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   summaryValue: {
+    ...Typography.body,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  dateButton: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    marginBottom: Spacing.md,
+    backgroundColor: Colors.surface,
+  },
+  dateButtonLabel: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xs,
+  },
+  dateButtonValue: {
     ...Typography.body,
     fontWeight: '600',
     color: Colors.text,

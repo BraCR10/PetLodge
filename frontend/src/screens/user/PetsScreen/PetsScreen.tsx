@@ -14,28 +14,28 @@ import { styles } from './PetsScreen.styles';
 
 const initialPets: Mascota[] = [
   {
-    id: 'pet-1',
+    id: 1,
     nombre: 'Max',
     tipo: 'perro',
     raza: 'Golden Retriever',
     edad: 3,
     sexo: 'macho',
     tamaño: 'grande',
-    estadoVacunacion: true,
+    estadoVacunacion: 'vacunado',
     condicionesMedicas: 'Ninguna',
     numeroVeterinario: '+506 2234-5678',
     cuidadosEspeciales: 'Requiere baño mensual y cepillado frecuente',
     foto: '',
   },
   {
-    id: 'pet-2',
+    id: 2,
     nombre: 'Luna',
     tipo: 'gato',
     raza: 'Persa',
     edad: 2,
     sexo: 'hembra',
     tamaño: 'pequeño',
-    estadoVacunacion: true,
+    estadoVacunacion: 'vacunado',
     condicionesMedicas: 'Alergia a ciertos alimentos',
     numeroVeterinario: '+506 2234-5678',
     cuidadosEspeciales: 'Debe estar en interiores',
@@ -46,7 +46,7 @@ const initialPets: Mascota[] = [
 export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [pets, setPets] = useState(initialPets);
 
-  const handleDeletePet = (petId: string, petName: string) => {
+  const handleDeletePet = (petId: number, petName: string) => {
     Alert.alert(
       'Eliminar mascota',
       `¿Estás seguro de que quieres eliminar a ${petName}?`,

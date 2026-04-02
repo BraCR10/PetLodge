@@ -12,33 +12,41 @@ export type EstadoReserva = 'en progreso' | 'confirmada' | 'completada';
 
 // Interfaz para mascota
 export type Mascota = {
-  id: string;
+  id: number;
   nombre: string;
   tipo: TipoMascota;
   raza: string;
   edad: number;
   sexo: SexoMascota;
   tamaño: TamañoMascota;
-  estadoVacunacion: boolean;
+  estadoVacunacion: string;
   condicionesMedicas: string;
   numeroVeterinario: string;
   cuidadosEspeciales: string;
   foto?: string;
 };
 
+// Interfaz para habitación
+export type Habitacion = {
+  id: number;
+  name: string;
+};
+
 // Interfaz para reserva
 export type Reserva = {
-  id: string;
+  id: number;
   nombreMascota: string;
   fechaEntrada: string;
   fechaSalida: string;
-  habitacion: string;
+  habitacionId: number;
   estado: EstadoReserva;
+  esEspecial: boolean;
+  serviciosAdicionales?: string;
 };
 
 // Interfaz para usuario
 export type Usuario = {
-  id: string;
+  id: number;
   nombre: string;
   numeroIdentificacion: string;
   email: string;
@@ -50,7 +58,7 @@ export type Usuario = {
 
 // Interfaz para plantilla de notificación
 export type NotificationTemplate = {
-  id: string;
+  id: number;
   name: string;
   icon: string;
   subject: string;
