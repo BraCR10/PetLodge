@@ -15,7 +15,7 @@ import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { Card } from '@/src/components/ui/Card';
 import { Spacing, Colors } from '@/src/utils/theme';
-import { Mascota, TipoMascota, SexoMascota, TamañoMascota, ScreenPropsWithRoute } from '@/src/types';
+import { Mascota, SexoMascota, TamañoMascota, ScreenPropsWithRoute } from '@/src/types';
 import { styles } from './EditPetScreen.styles';
 
 export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, route }) => {
@@ -23,9 +23,10 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
   
   // Basic information
   const [nombre, setNombre] = useState('');
-  const [tipo, setTipo] = useState<TipoMascota>('perro');
+  const [tipo, setTipo] = useState('');
   const [raza, setRaza] = useState('');
-  const [edad, setEdad] = useState('');
+  const [anos, setAnos] = useState('');
+  const [meses, setMeses] = useState('');
   
   // Physical characteristics
   const [sexo, setSexo] = useState<SexoMascota>('macho');
@@ -48,7 +49,8 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
       setNombre(mascota.nombre);
       setTipo(mascota.tipo);
       setRaza(mascota.raza);
-      setEdad(String(mascota.edad));
+      setAnos(String(mascota.anos));
+      setMeses(String(mascota.meses));
       setSexo(mascota.sexo);
       setTamaño(mascota.tamaño);
       setEstadoVacunacion(mascota.estadoVacunacion);
@@ -63,9 +65,12 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
     const newErrors: Record<string, string> = {};
 
     if (!nombre) newErrors.nombre = 'El nombre es requerido';
+    if (!tipo) newErrors.tipo = 'El tipo es requerido';
     if (!raza) newErrors.raza = 'La raza es requerida';
-    if (!edad) newErrors.edad = 'La edad es requerida';
-    else if (isNaN(Number(edad)) || Number(edad) < 0) newErrors.edad = 'La edad debe ser un número válido';
+    if (!anos) newErrors.anos = 'Los años son requeridos';
+    else if (isNaN(Number(anos)) || Number(anos) < 0) newErrors.anos = 'Los años deben ser un número válido';
+    if (!meses) newErrors.meses = 'Los meses son requeridos';
+    else if (isNaN(Number(meses)) || Number(meses) < 0 || Number(meses) > 11) newErrors.meses = 'Los meses deben ser entre 0 y 11';
     
     if (!foto) newErrors.foto = 'La foto de la mascota es requerida';
     if (!estadoVacunacion) newErrors.estadoVacunacion = 'El estado de vacunación es requerido';
@@ -84,14 +89,6 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
       { text: 'Aceptar', onPress: () => navigation.goBack() },
     ]);
   };
-
-  const tipoMascotaOptions = [
-    { tipo: 'perro' as TipoMascota, icon: '🐕', label: 'Perro' },
-    { tipo: 'gato' as TipoMascota, icon: '🐈', label: 'Gato' },
-    { tipo: 'conejo' as TipoMascota, icon: '🐰', label: 'Conejo' },
-    { tipo: 'pajaro' as TipoMascota, icon: '🐦', label: 'Pájaro' },
-    { tipo: 'otro' as TipoMascota, icon: '🐾', label: 'Otro' },
-  ];
 
   const sexoOptions = [
     { sexo: 'macho' as SexoMascota, label: 'Macho' },
@@ -145,26 +142,14 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
               required
             />
 
-            <View style={styles.typeContainer}>
-              <Text style={styles.typeLabel}>Tipo de mascota</Text>
-              <Card padding={Spacing.md} margin={0}>
-                <View style={styles.typeGrid}>
-                  {tipoMascotaOptions.map((option) => (
-                    <Pressable
-                      key={option.tipo}
-                      onPress={() => setTipo(option.tipo)}
-                      style={[
-                        styles.typeButton,
-                        tipo === option.tipo && styles.typeButtonSelected,
-                      ]}
-                    >
-                      <Text style={styles.typeIcon}>{option.icon}</Text>
-                      <Text style={styles.typeName}>{option.label}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </Card>
-            </View>
+            <Input
+              label="Tipo de mascota"
+              placeholder="p. ej., perro, gato, conejo, pajaro, otro"
+              value={tipo}
+              onChangeText={setTipo}
+              error={errors.tipo}
+              required
+            />
 
             <Input
               label="Raza"
@@ -175,15 +160,30 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
               required
             />
 
-            <Input
-              label="Edad (años)"
-              placeholder="p. ej., 3"
-              value={edad}
-              onChangeText={setEdad}
-              keyboardType="numeric"
-              error={errors.edad}
-              required
-            />
+            <View style={styles.ageContainer}>
+              <View style={styles.ageField}>
+                <Input
+                  label="Años"
+                  placeholder="0"
+                  value={anos}
+                  onChangeText={setAnos}
+                  keyboardType="numeric"
+                  error={errors.anos}
+                  required
+                />
+              </View>
+              <View style={styles.ageField}>
+                <Input
+                  label="Meses"
+                  placeholder="0"
+                  value={meses}
+                  onChangeText={setMeses}
+                  keyboardType="numeric"
+                  error={errors.meses}
+                  required
+                />
+              </View>
+            </View>
 
             {/* Physical Characteristics Section */}
             <Text style={styles.sectionTitle}>Características físicas</Text>

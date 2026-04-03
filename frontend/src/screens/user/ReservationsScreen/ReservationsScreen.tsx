@@ -14,30 +14,30 @@ import { styles } from './ReservationsScreen.styles';
 
 const initialReservations: Reserva[] = [
   {
-    id: 1,
+    id: "1",
     nombreMascota: 'Max',
     fechaEntrada: '2026-04-01',
     fechaSalida: '2026-04-05',
-    habitacionId: 1,
+    habitacionId: "1",
     estado: 'confirmada',
     esEspecial: false,
   },
   {
-    id: 2,
+    id: "2",
     nombreMascota: 'Luna',
     fechaEntrada: '2026-05-10',
     fechaSalida: '2026-05-12',
-    habitacionId: 2,
+    habitacionId: "2",
     estado: 'en progreso',
     esEspecial: true,
-    serviciosAdicionales: 'Paseo diario y baño especial',
+    serviciosAdicionales: ['paseo', 'baño'],
   },
 ];
 
 export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [reservations, setReservations] = useState(initialReservations);
 
-  const handleCancelReservation = (resId: number, nombreMascota: string) => {
+  const handleCancelReservation = (resId: string, nombreMascota: string) => {
     Alert.alert(
       'Cancelar reserva',
       `¿Estás seguro de que quieres cancelar la reserva de ${nombreMascota}?`,

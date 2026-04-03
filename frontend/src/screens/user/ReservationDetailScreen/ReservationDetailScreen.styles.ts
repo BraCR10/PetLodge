@@ -51,6 +51,13 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 12,
   },
+  serviciosList: {
+    gap: Spacing.xs,
+  },
+  servicioTag: {
+    ...Typography.body,
+    color: Colors.text,
+  },
   backButton: {
     marginTop: Spacing.xl,
   },

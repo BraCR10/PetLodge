@@ -141,6 +141,45 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.text,
   },
+  serviciosContainer: {
+    marginVertical: Spacing.sm,
+  },
+  serviciosLabel: {
+    ...Typography.bodySmall,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: Spacing.md,
+  },
+  serviciosGrid: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    flexWrap: 'wrap',
+  },
+  servicioButton: {
+    flex: 1,
+    minWidth: '30%',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  servicioButtonSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '10',
+    borderWidth: 2,
+  },
+  servicioIcon: {
+    fontSize: 24,
+  },
+  servicioLabelText: {
+    ...Typography.caption,
+    fontWeight: '500',
+    color: Colors.text,
+    textAlign: 'center',
+  },
   actions: {
     gap: Spacing.md,
   },
