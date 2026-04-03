@@ -14,11 +14,12 @@ import { styles } from './PetsScreen.styles';
 
 const initialPets: Mascota[] = [
   {
-    id: 1,
+    id: "1",
     nombre: 'Max',
     tipo: 'perro',
     raza: 'Golden Retriever',
-    edad: 3,
+    anos: 3,
+    meses: 6,
     sexo: 'macho',
     tamaño: 'grande',
     estadoVacunacion: 'vacunado',
@@ -28,11 +29,12 @@ const initialPets: Mascota[] = [
     foto: '',
   },
   {
-    id: 2,
+    id: "2",
     nombre: 'Luna',
     tipo: 'gato',
     raza: 'Persa',
-    edad: 2,
+    anos: 2,
+    meses: 3,
     sexo: 'hembra',
     tamaño: 'pequeño',
     estadoVacunacion: 'vacunado',
@@ -46,7 +48,7 @@ const initialPets: Mascota[] = [
 export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [pets, setPets] = useState(initialPets);
 
-  const handleDeletePet = (petId: number, petName: string) => {
+  const handleDeletePet = (petId: string, petName: string) => {
     Alert.alert(
       'Eliminar mascota',
       `¿Estás seguro de que quieres eliminar a ${petName}?`,
@@ -103,7 +105,7 @@ export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
                 <View style={styles.petInfo}>
                   <Text style={styles.petName}>{item.nombre}</Text>
                   <Text style={styles.petDetails}>
-                    {item.raza} • {item.edad} años
+                    {item.raza} • {item.anos} años y {item.meses} meses
                   </Text>
                 </View>
               </View>

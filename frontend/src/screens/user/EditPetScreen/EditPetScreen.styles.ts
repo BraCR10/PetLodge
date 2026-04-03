@@ -29,6 +29,14 @@ export const styles = StyleSheet.create({
   typeContainer: {
     marginVertical: Spacing.sm,
   },
+  ageContainer: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginVertical: Spacing.sm,
+  },
+  ageField: {
+    flex: 1,
+  },
   typeLabel: {
     ...Typography.bodySmall,
     fontWeight: '600',
