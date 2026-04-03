@@ -87,7 +87,7 @@ export class PetsService {
     }
 
     // Remove enum fields from fields spread to avoid type conflicts, then add them back with proper types
-    const { tipo, sexo, tamano, ...otherFields } = fields;
+    const { tipo: _tipo, sexo: _sexo, tamano: _tamano, ...otherFields } = fields;
     const pet = await this.prisma.pet.update({
       where: { id },
       data: {
