@@ -14,63 +14,69 @@ import { styles } from './NotificationCenterScreen.styles';
 
 const notificationTypes: NotificationTemplate[] = [
   {
-    id: 'user-registration',
-    name: 'User registration',
-    icon: '👤',
-    subject: 'Welcome to PetLodge',
-    body: 'Dear {name},\n\nThank you for registering with PetLodge. Your account has been successfully created.\n\nBest regards,\nPetLodge Team',
+    id: '1',
+    type: 'REGISTRO_USUARIO',
+    subject: 'Bienvenido a PetLodge',
+    body: 'Estimado {name},\n\nGracias por registrarte en PetLodge. Tu cuenta ha sido creada exitosamente.\n\nSaludos cordiales,\nEquipo de PetLodge',
     variables: ['name', 'email'],
   },
   {
-    id: 'reservation-confirmation',
-    name: 'Reservation confirmation',
-    icon: '✓',
-    subject: 'Reservation Confirmed',
-    body: 'Dear {name},\n\nYour reservation for {petName} has been confirmed for {checkInDate} to {checkOutDate}.\n\nRoom: {roomNumber}\n\nBest regards,\nPetLodge Team',
+    id: '2',
+    type: 'CONFIRMACION_RESERVA',
+    subject: 'Reserva Confirmada',
+    body: 'Estimado {name},\n\nTu reserva para {petName} ha sido confirmada para {checkInDate} a {checkOutDate}.\n\nHabitación: {roomNumber}\n\nSaludos cordiales,\nEquipo de PetLodge',
     variables: ['name', 'petName', 'checkInDate', 'checkOutDate', 'roomNumber'],
   },
   {
-    id: 'reservation-modification',
-    name: 'Reservation modification',
-    icon: '✏️',
-    subject: 'Reservation Modified',
-    body: 'Dear {name},\n\nYour reservation for {petName} has been modified.\n\nNew dates: {checkInDate} to {checkOutDate}\n\nBest regards,\nPetLodge Team',
+    id: '3',
+    type: 'MODIFICACION_RESERVA',
+    subject: 'Reserva Modificada',
+    body: 'Estimado {name},\n\nTu reserva para {petName} ha sido modificada.\n\nNuevas fechas: {checkInDate} a {checkOutDate}\n\nSaludos cordiales,\nEquipo de PetLodge',
     variables: ['name', 'petName', 'checkInDate', 'checkOutDate'],
   },
   {
-    id: 'logging-start',
-    name: 'Logging start',
-    icon: '🏠',
-    subject: 'Pet Check-In Successful',
-    body: 'Dear {name},\n\n{petName} has been successfully checked in to PetLodge.\n\nCheck-in time: {checkInTime}\n\nBest regards,\nPetLodge Team',
+    id: '4',
+    type: 'INICIO_HOSPEDAJE',
+    subject: 'Entrada Exitosa',
+    body: 'Estimado {name},\n\n{petName} ha sido ingresado exitosamente a PetLodge.\n\nHora de entrada: {checkInTime}\n\nSaludos cordiales,\nEquipo de PetLodge',
     variables: ['name', 'petName', 'checkInTime'],
   },
   {
-    id: 'logging-end',
-    name: 'Logging end',
-    icon: '👋',
-    subject: 'Pet Check-Out Complete',
-    body: 'Dear {name},\n\n{petName} has been successfully checked out from PetLodge.\n\nThank you for choosing us!\n\nBest regards,\nPetLodge Team',
+    id: '5',
+    type: 'FIN_HOSPEDAJE',
+    subject: 'Salida Completada',
+    body: 'Estimado {name},\n\n{petName} ha sido retirado exitosamente de PetLodge.\n\n¡Gracias por elegirnos!\n\nSaludos cordiales,\nEquipo de PetLodge',
     variables: ['name', 'petName'],
   },
   {
-    id: 'pet-status-update',
-    name: 'Pet status update',
-    icon: '🐾',
-    subject: 'Update on your pet',
-    body: 'Dear {name},\n\nWe wanted to update you on {petName}:\n\n{statusMessage}\n\nBest regards,\nPetLodge Team',
+    id: '6',
+    type: 'ESTADO_MASCOTA',
+    subject: 'Actualización sobre tu mascota',
+    body: 'Estimado {name},\n\nQueríamos actualizarte sobre {petName}:\n\n{statusMessage}\n\nSaludos cordiales,\nEquipo de PetLodge',
     variables: ['name', 'petName', 'statusMessage'],
   },
 ];
 
 export const NotificationCenterScreen: React.FC<ScreenProps> = ({ navigation }) => {
-  const [selectedTypeId, setSelectedTypeId] = useState('user-registration');
+  const [selectedTypeId, setSelectedTypeId] = useState('1');
   const [templates, setTemplates] = useState<Record<string, NotificationTemplate>>(
     notificationTypes.reduce((acc: Record<string, NotificationTemplate>, template) => {
       acc[template.id] = template;
       return acc;
     }, {})
   );
+
+  const getFormattedType = (type: string): string => {
+    const typeNames: Record<string, string> = {
+      REGISTRO_USUARIO: 'Registro de Usuario',
+      CONFIRMACION_RESERVA: 'Confirmación de Reserva',
+      MODIFICACION_RESERVA: 'Modificación de Reserva',
+      INICIO_HOSPEDAJE: 'Inicio de Hospedaje',
+      FIN_HOSPEDAJE: 'Fin de Hospedaje',
+      ESTADO_MASCOTA: 'Estado de Mascota',
+    };
+    return typeNames[type] || type;
+  };
 
   const selectedTemplate = templates[selectedTypeId];
 
@@ -96,8 +102,8 @@ export const NotificationCenterScreen: React.FC<ScreenProps> = ({ navigation }) 
 
   const handleSave = () => {
     Alert.alert(
-      'Success',
-      `Template for "${selectedTemplate.name}" has been saved.`,
+      'Guardado',
+      `Plantilla para "${getFormattedType(templates[selectedTypeId].type)}" ha sido guardada.`,
       [{ text: 'OK' }]
     );
   };
@@ -132,7 +138,7 @@ export const NotificationCenterScreen: React.FC<ScreenProps> = ({ navigation }) 
                     selectedTypeId === type.id && styles.typeButtonActiveText,
                   ]}
                 >
-                  {type.icon} {type.name}
+                  {getFormattedType(type.type)}
                 </Text>
               </Pressable>
             ))}
