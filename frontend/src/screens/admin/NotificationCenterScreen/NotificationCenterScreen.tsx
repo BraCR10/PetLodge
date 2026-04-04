@@ -18,7 +18,7 @@ const notificationTypes: NotificationTemplate[] = [
     name: 'User registration',
     icon: '👤',
     subject: 'Welcome to PetLodge',
-    body: 'Dear {name},\n\nThank you for registering with PetLodge. Your account has been successfully created.\n\nBest regards,\nPetLodge Team',
+    body: 'Estimad@ {name},\n\nGracias por registrarte en PetLodge. Tu cuenta ha sido creada exitosamente.\n\nSaludos,\nEl equipo de PetLodge',
     variables: ['name', 'email'],
   },
   {
@@ -26,7 +26,7 @@ const notificationTypes: NotificationTemplate[] = [
     name: 'Reservation confirmation',
     icon: '✓',
     subject: 'Reservation Confirmed',
-    body: 'Dear {name},\n\nYour reservation for {petName} has been confirmed for {checkInDate} to {checkOutDate}.\n\nRoom: {roomNumber}\n\nBest regards,\nPetLodge Team',
+    body: 'Estimad@ {name},\n\nTu reserva para {petName} ha sido confirmada para {checkInDate} hasta {checkOutDate}.\n\nHabitación: {roomNumber}\n\nSaludos,\nEl equipo de PetLodge',
     variables: ['name', 'petName', 'checkInDate', 'checkOutDate', 'roomNumber'],
   },
   {
@@ -34,7 +34,7 @@ const notificationTypes: NotificationTemplate[] = [
     name: 'Reservation modification',
     icon: '✏️',
     subject: 'Reservation Modified',
-    body: 'Dear {name},\n\nYour reservation for {petName} has been modified.\n\nNew dates: {checkInDate} to {checkOutDate}\n\nBest regards,\nPetLodge Team',
+    body: 'Estimad@ {name},\n\nTu reserva para {petName} ha sido modificada.\n\nNuevas fechas: {checkInDate} a {checkOutDate}\n\nSaludos,\nEl equipo de PetLodge',
     variables: ['name', 'petName', 'checkInDate', 'checkOutDate'],
   },
   {
@@ -42,7 +42,7 @@ const notificationTypes: NotificationTemplate[] = [
     name: 'Logging start',
     icon: '🏠',
     subject: 'Pet Check-In Successful',
-    body: 'Dear {name},\n\n{petName} has been successfully checked in to PetLodge.\n\nCheck-in time: {checkInTime}\n\nBest regards,\nPetLodge Team',
+    body: 'Estimad@ {name},\n\n{petName} ha sido registrado exitosamente en PetLodge.\n\nHora de registro: {checkInTime}\n\nSaludos,\nEl equipo de PetLodge',
     variables: ['name', 'petName', 'checkInTime'],
   },
   {
@@ -50,15 +50,15 @@ const notificationTypes: NotificationTemplate[] = [
     name: 'Logging end',
     icon: '👋',
     subject: 'Pet Check-Out Complete',
-    body: 'Dear {name},\n\n{petName} has been successfully checked out from PetLodge.\n\nThank you for choosing us!\n\nBest regards,\nPetLodge Team',
-    variables: ['name', 'petName'],
+    body: 'Estimad@ {name},\n\n{petName} ha sido registrado exitosamente en PetLodge.\n\nHora de registro: {checkInTime}\n\nSaludos,\nEl equipo de PetLodge',
+    variables: ['name', 'petName', 'checkInTime'],
   },
   {
     id: 'pet-status-update',
     name: 'Pet status update',
     icon: '🐾',
     subject: 'Update on your pet',
-    body: 'Dear {name},\n\nWe wanted to update you on {petName}:\n\n{statusMessage}\n\nBest regards,\nPetLodge Team',
+    body: 'Estimad@ {name},\n\nQueremos mantenerte informado sobre {petName}:\n\n{statusMessage}\n\nSaludos,\nEl equipo de PetLodge',
     variables: ['name', 'petName', 'statusMessage'],
   },
 ];
