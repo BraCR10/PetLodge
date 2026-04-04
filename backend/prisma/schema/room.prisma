@@ -1,8 +1,5 @@
 model Room {
-  // tipo: estandar | especial
   id           String        @id @default(uuid())
   numero       String        @unique
-  tipo         String
-  isAvailable  Boolean       @default(true)
   reservations Reservation[]
 }

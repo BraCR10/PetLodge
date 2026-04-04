@@ -16,8 +16,9 @@ import {
   ValidationArguments,
 } from 'class-validator';
 
-const SEXOS = ['macho', 'hembra'] as const;
-const TAMANOS = ['pequeño', 'mediano', 'grande'] as const;
+const TIPOS = ['PERRO', 'GATO', 'CONEJO', 'PAJARO', 'OTRO'] as const;
+const SEXOS = ['MACHO', 'HEMBRA'] as const;
+const TAMANOS = ['PEQUENO', 'MEDIANO', 'GRANDE'] as const;
 
 // Cross-field rule: anos=0 + meses=0 is never valid.
 // anos=0 + meses≥1 is allowed (young pet). anos≥1 + meses=0 is allowed (exact years).
@@ -38,8 +39,8 @@ class AgeNotZeroConstraint implements ValidatorConstraintInterface {
 const toInt = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? parseInt(value, 10) : value;
 
-const toLower = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.toLowerCase() : value;
+const toUpperCase = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.toUpperCase() : value;
 
 export class CreatePetDto {
   @ApiProperty({ example: 'Max' })
@@ -48,10 +49,9 @@ export class CreatePetDto {
   @MaxLength(100, { message: 'El nombre no puede exceder 100 caracteres' })
   nombre: string;
 
-  // Known values are perro, gato, conejo, pajaro, otro — but any custom type is accepted.
-  @ApiProperty({ example: 'perro' })
-  @Transform(toLower)
-  @IsString({ message: 'El tipo de mascota es requerido' })
+  @ApiProperty({ enum: TIPOS, example: 'PERRO' })
+  @Transform(toUpperCase)
+  @IsIn(TIPOS, { message: 'El tipo debe ser PERRO, GATO, CONEJO, PAJARO u OTRO' })
   tipo: string;
 
   @ApiProperty({ example: 'Golden Retriever' })
@@ -80,17 +80,14 @@ export class CreatePetDto {
   @Validate(AgeNotZeroConstraint)
   meses?: number;
 
-  @ApiProperty({ enum: SEXOS })
-  @Transform(toLower)
-  @IsIn(SEXOS, { message: 'El sexo debe ser macho o hembra' })
+  @ApiProperty({ enum: SEXOS, example: 'MACHO' })
+  @Transform(toUpperCase)
+  @IsIn(SEXOS, { message: 'El sexo debe ser MACHO o HEMBRA' })
   sexo: string;
 
-  // ASCII field name avoids UTF-8 corruption of ñ in multipart form field names.
-  // The response maps this back to `tamaño` to match the frontend Mascota type.
-  // The NormalizeEncodingInterceptor also accepts `tamaño` and maps it here automatically.
-  @ApiProperty({ enum: TAMANOS })
-  @Transform(toLower)
-  @IsIn(TAMANOS, { message: 'El tamaño debe ser pequeño, mediano o grande' })
+  @ApiProperty({ enum: TAMANOS, example: 'MEDIANO' })
+  @Transform(toUpperCase)
+  @IsIn(TAMANOS, { message: 'El tamaño debe ser PEQUENO, MEDIANO o GRANDE' })
   tamano: string;
 
   @ApiProperty({ type: String, example: 'Sí, vacunado' })

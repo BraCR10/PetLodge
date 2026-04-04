@@ -1,11 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOkResponse,
-  ApiOperation,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AvailableRoomsQueryDto } from './dto/available-rooms-query.dto';
 import { RoomResponseDto } from './dto/room-response.dto';
 import { RoomsService } from './rooms.service';

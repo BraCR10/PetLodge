@@ -6,3 +6,31 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// Pet enums
+enum PetType {
+  PERRO
+  GATO
+  CONEJO
+  PAJARO
+  OTRO
+}
+
+enum PetSex {
+  MACHO
+  HEMBRA
+}
+
+enum PetSize {
+  PEQUENO
+  MEDIANO
+  GRANDE
+}
+
+// Reservation enum
+enum ReservationStatus {
+  CONFIRMADA
+  EN_PROGRESO
+  COMPLETADA
+  CANCELADA
+}

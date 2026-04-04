@@ -11,7 +11,7 @@ export class AvailableRoomsQueryDto {
   @Matches(DATE_ONLY_REGEX, {
     message: 'La fecha from debe tener formato YYYY-MM-DD',
   })
-  from: string;
+  from!: string;
 
   @ApiProperty({
     example: '2026-04-12',
@@ -20,5 +20,5 @@ export class AvailableRoomsQueryDto {
   @Matches(DATE_ONLY_REGEX, {
     message: 'La fecha to debe tener formato YYYY-MM-DD',
   })
-  to: string;
+  to!: string;
 }

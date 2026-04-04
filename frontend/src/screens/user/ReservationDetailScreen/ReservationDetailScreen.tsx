@@ -7,10 +7,10 @@ import { Reserva, EstadoReserva, Habitacion, ScreenPropsWithRoute } from '@/src/
 import { styles } from './ReservationDetailScreen.styles';
 
 const habitaciones: Habitacion[] = [
-  { id: 1, name: 'Habitación Estándar A' },
-  { id: 2, name: 'Habitación Estándar B' },
-  { id: 3, name: 'Habitación Premium' },
-  { id: 4, name: 'Suite Deluxe' },
+  { id: "1", name: 'Habitación Estándar A' },
+  { id: "2", name: 'Habitación Estándar B' },
+  { id: "3", name: 'Habitación Premium' },
+  { id: "4", name: 'Suite Deluxe' },
 ];
 
 export const ReservationDetailScreen: React.FC<ScreenPropsWithRoute> = ({
@@ -42,7 +42,7 @@ export const ReservationDetailScreen: React.FC<ScreenPropsWithRoute> = ({
     switch (estado) {
       case 'confirmada':
         return { backgroundColor: Colors.success + '20' };
-      case 'pendiente':
+      case 'en progreso':
         return { backgroundColor: Colors.warning + '20' };
       case 'cancelada':
         return { backgroundColor: Colors.error + '20' };
@@ -57,7 +57,7 @@ export const ReservationDetailScreen: React.FC<ScreenPropsWithRoute> = ({
     switch (estado) {
       case 'confirmada':
         return Colors.success;
-      case 'pendiente':
+      case 'en progreso':
         return Colors.warning;
       case 'cancelada':
         return Colors.error;
@@ -72,8 +72,8 @@ export const ReservationDetailScreen: React.FC<ScreenPropsWithRoute> = ({
     switch (estado) {
       case 'confirmada':
         return 'Confirmada';
-      case 'pendiente':
-        return 'Pendiente';
+      case 'en progreso':
+        return 'En progreso';
       case 'cancelada':
         return 'Cancelada';
       case 'completada':
@@ -121,12 +121,15 @@ export const ReservationDetailScreen: React.FC<ScreenPropsWithRoute> = ({
             </View>
           </View>
 
-          {reserva.esEspecial && reserva.serviciosAdicionales && (
+          {reserva.esEspecial && reserva.serviciosAdicionales && reserva.serviciosAdicionales.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Servicios adicionales</Text>
-              <View style={styles.detail}>
-                <Text style={styles.label}>Solicitados</Text>
-                <Text style={styles.value}>{reserva.serviciosAdicionales}</Text>
+              <View style={styles.serviciosList}>
+                {reserva.serviciosAdicionales.map((servicio, index) => (
+                  <Text key={index} style={styles.servicioTag}>
+                    • {servicio}
+                  </Text>
+                ))}
               </View>
             </View>
           )}

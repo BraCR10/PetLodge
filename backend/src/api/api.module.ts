@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { PetsModule } from './pets/pets.module';
+import { ReservationsModule } from './reservations/reservations.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { UsersModule } from './users/users.module';
 
@@ -9,6 +10,7 @@ import { UsersModule } from './users/users.module';
  * AppModule imports only this module for feature routing — keeping infrastructure and features separate.
  */
 @Module({
-  imports: [AuthModule, UsersModule, PetsModule, RoomsModule],
+
+  imports: [AuthModule, UsersModule, PetsModule, RoomsModule, ReservationsModule],
 })
 export class ApiModule {}

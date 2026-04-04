@@ -20,11 +20,12 @@ const isWeb = Platform.OS === 'web';
 
 const opcionesMascotas: Mascota[] = [
   { 
-    id: 1, 
+    id: "1", 
     nombre: 'Max', 
     tipo: 'perro', 
     raza: 'Golden Retriever', 
-    edad: 3,
+    anos: 3,
+    meses: 6,
     sexo: 'macho',
     tamaño: 'grande',
     estadoVacunacion: 'vacunado',
@@ -33,11 +34,12 @@ const opcionesMascotas: Mascota[] = [
     cuidadosEspeciales: 'Requiere baño mensual y cepillado frecuente',
   },
   { 
-    id: 2, 
+    id: "2", 
     nombre: 'Luna', 
     tipo: 'gato', 
     raza: 'Persa', 
-    edad: 2,
+    anos: 2,
+    meses: 3,
     sexo: 'hembra',
     tamaño: 'pequeño',
     estadoVacunacion: 'vacunado',
@@ -48,26 +50,40 @@ const opcionesMascotas: Mascota[] = [
 ];
 
 const habitaciones: Habitacion[] = [
-  { id: 1, name: 'Habitación Estándar A' },
-  { id: 2, name: 'Habitación Estándar B' },
-  { id: 3, name: 'Habitación Premium' },
-  { id: 4, name: 'Suite Deluxe' },
+  { id: "1", name: 'Habitación Estándar A' },
+  { id: "2", name: 'Habitación Estándar B' },
+  { id: "3", name: 'Habitación Premium' },
+  { id: "4", name: 'Suite Deluxe' },
 ];
 
 export const NewReservationScreen: React.FC<ScreenProps> = ({
   navigation,
 }) => {
-  const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
+  const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [fechaEntrada, setFechaEntrada] = useState<Date | null>(null);
   const [fechaSalida, setFechaSalida] = useState<Date | null>(null);
   const [fechaEntradaWeb, setFechaEntradaWeb] = useState('');
   const [fechaSalidaWeb, setFechaSalidaWeb] = useState('');
-  const [selectedHabitacionId, setSelectedHabitacionId] = useState<number | null>(null);
+  const [selectedHabitacionId, setSelectedHabitacionId] = useState<string | null>(null);
   const [showCheckInPicker, setShowCheckInPicker] = useState(false);
   const [showCheckOutPicker, setShowCheckOutPicker] = useState(false);
   const [esEspecial, setEsEspecial] = useState(false);
-  const [serviciosAdicionales, setServiciosAdicionales] = useState('');
+  const [serviciosAdicionales, setServiciosAdicionales] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const serviciosDisponibles = [
+    { id: 'bano', label: 'Baño', icon: '🛁' },
+    { id: 'paseo', label: 'Paseo', icon: '🚶' },
+    { id: 'alimentacion-especial', label: 'Alimentación especial', icon: '🍗' },
+  ];
+
+  const toggleServicio = (servicioId: string) => {
+    setServiciosAdicionales(prev =>
+      prev.includes(servicioId)
+        ? prev.filter(s => s !== servicioId)
+        : [...prev, servicioId]
+    );
+  };
 
   // Check if dates are selected to enable room selection
   const datesSelected = isWeb ? (fechaEntradaWeb && fechaSalidaWeb) : (fechaEntrada && fechaSalida);
@@ -93,8 +109,8 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
 
     if (!selectedHabitacionId) newErrors.habitacion = 'Por favor selecciona una habitación';
     
-    if (esEspecial && !serviciosAdicionales) {
-      newErrors.servicios = 'Por favor especifica los servicios solicitados';
+    if (esEspecial && serviciosAdicionales.length === 0) {
+      newErrors.servicios = 'Por favor especifica al menos un servicio adicional';
     }
 
     setErrors(newErrors);
@@ -283,16 +299,24 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
                 </Pressable>
 
                 {esEspecial && (
-                  <Input
-                    label="Servicios solicitados"
-                    placeholder="p. ej., Paseo diario, baño especial, alimentación personalizada"
-                    value={serviciosAdicionales}
-                    onChangeText={setServiciosAdicionales}
-                    error={errors.servicios}
-                    multiline
-                    numberOfLines={3}
-                    required
-                  />
+                  <View style={styles.serviciosContainer}>
+                    <Text style={styles.serviciosLabel}>Servicios adicionales</Text>
+                    <View style={styles.serviciosGrid}>
+                      {serviciosDisponibles.map((servicio) => (
+                        <Pressable
+                          key={servicio.id}
+                          onPress={() => toggleServicio(servicio.id)}
+                          style={[
+                            styles.servicioButton,
+                            serviciosAdicionales.includes(servicio.id) && styles.servicioButtonSelected,
+                          ]}
+                        >
+                          <Text style={styles.servicioIcon}>{servicio.icon}</Text>
+                          <Text style={styles.servicioLabelText}>{servicio.label}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
                 )}
               </View>
 
@@ -325,6 +349,12 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Tipo</Text>
                     <Text style={styles.summaryValue}>Especial</Text>
+                  </View>
+                )}
+                {esEspecial && serviciosAdicionales.length > 0 && (
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Servicios</Text>
+                    <Text style={styles.summaryValue}>{serviciosAdicionales.join(', ')}</Text>
                   </View>
                 )}
               </View>

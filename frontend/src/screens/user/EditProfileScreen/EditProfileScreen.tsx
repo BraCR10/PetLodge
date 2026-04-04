@@ -12,6 +12,8 @@ import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { ScreenPropsWithRoute } from '@/src/types';
 import { useAuth } from '@/src/context/AuthContext';
+import { userService } from '@/src/services/api/user.service';
+import { Colors, Spacing } from '@/src/utils/theme';
 import { styles } from './EditProfileScreen.styles';
 
 export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
@@ -26,14 +28,16 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
   const [direccion, setDireccion] = useState('');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [generalError, setGeneralError] = useState('');
 
   useEffect(() => {
     if (user) {
       setNombre(user.nombre);
       setNumeroIdentificacion(user.numeroIdentificacion);
       setEmail(user.email);
-      setNumeroTelefono(user.numeroTelefono);
-      setDireccion(user.direccion);
+      setNumeroTelefono(user.numeroTelefono || '');
+      setDireccion(user.direccion || '');
     }
   }, [user]);
 
@@ -61,21 +65,51 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
 
-    // Update user in context
-    updateUser({
-      nombre,
-      numeroIdentificacion,
-      email,
-      numeroTelefono,
-      direccion,
-    });
+    setIsLoading(true);
+    setGeneralError('');
 
-    Alert.alert('Cambios guardados', 'Tu información de perfil se actualizó.', [
-      { text: 'Aceptar', onPress: () => navigation.goBack() },
-    ]);
+    try {
+      // Call API to update profile
+      const updatedUser = await userService.updateProfile({
+        nombre,
+        numeroIdentificacion,
+        email,
+        numeroTelefono,
+        direccion,
+      });
+
+      // Update user in context with fresh data
+      updateUser({
+        nombre: updatedUser.nombre,
+        numeroIdentificacion: updatedUser.numeroIdentificacion,
+        email: updatedUser.email,
+        numeroTelefono: updatedUser.numeroTelefono,
+        direccion: updatedUser.direccion,
+      });
+
+      // Go back to home immediately
+      navigation.goBack();
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error al guardar cambios';
+      setGeneralError(errorMessage);
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (user) {
+      setNombre(user.nombre);
+      setNumeroTelefono(user.numeroTelefono || '');
+      setDireccion(user.direccion || '');
+      setErrors({});
+      setGeneralError('');
+    }
+    navigation.goBack();
   };
 
   return (
@@ -87,6 +121,29 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>Editar perfil</Text>
 
+          {generalError ? (
+            <View
+              style={{
+                backgroundColor: '#fee',
+                borderRadius: 8,
+                padding: Spacing.md,
+                marginBottom: Spacing.md,
+                borderLeftWidth: 4,
+                borderLeftColor: Colors.error || '#e74c3c',
+              }}
+            >
+              <Text
+                style={{
+                  color: Colors.error || '#c0392b',
+                  fontSize: 14,
+                  fontWeight: '500',
+                }}
+              >
+                {generalError}
+              </Text>
+            </View>
+          ) : null}
+
           <View style={styles.form}>
             <Text style={styles.sectionTitle}>Información personal</Text>
 
@@ -97,6 +154,7 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
               onChangeText={setNombre}
               error={errors.nombre}
               required
+              editable={!isLoading}
             />
 
             <Input
@@ -107,6 +165,7 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
               keyboardType="numeric"
               error={errors.numeroIdentificacion}
               required
+              editable={!isLoading}
             />
 
             <Input
@@ -117,6 +176,7 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
               keyboardType="email-address"
               error={errors.email}
               required
+              editable={!isLoading}
             />
 
             <Input
@@ -127,6 +187,7 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
               keyboardType="phone-pad"
               error={errors.numeroTelefono}
               required
+              editable={!isLoading}
             />
 
             <Input
@@ -138,22 +199,25 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
               numberOfLines={3}
               error={errors.direccion}
               required
+              editable={!isLoading}
             />
           </View>
 
           <View style={styles.actions}>
             <Button
-              title="Guardar cambios"
+              title={isLoading ? 'Guardando...' : 'Guardar cambios'}
               onPress={handleSave}
               fullWidth
               size="lg"
+              disabled={isLoading}
             />
             <Button
               title="Cancelar"
-              onPress={() => navigation.goBack()}
+              onPress={handleCancel}
               variant="secondary"
               fullWidth
               size="lg"
+              disabled={isLoading}
             />
           </View>
         </ScrollView>

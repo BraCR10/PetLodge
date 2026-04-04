@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Pet } from '../../../generated/prisma/client';
+import { Pet, PetType, PetSex, PetSize } from '../../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StorageService } from '../../storage/storage.service';
 import { CreatePetDto } from './dto/create-pet.dto';
@@ -36,9 +36,13 @@ export class PetsService {
       fotoUrl = await this.storage.upload(file.buffer, file.mimetype, file.originalname);
     }
 
+    // Cast enum fields to proper types (they're already uppercase from DTO transforms)
     const pet = await this.prisma.pet.create({
       data: {
         ...fields,
+        tipo: fields.tipo as PetType,
+        sexo: fields.sexo as PetSex,
+        tamano: fields.tamano as PetSize,
         condicionesMedicas: fields.condicionesMedicas ?? '',
         numeroVeterinario: fields.numeroVeterinario ?? '',
         cuidadosEspeciales: fields.cuidadosEspeciales ?? '',
@@ -82,10 +86,15 @@ export class PetsService {
       fotoUrl = await this.storage.upload(file.buffer, file.mimetype, file.originalname);
     }
 
+    // Remove enum fields from fields spread to avoid type conflicts, then add them back with proper types
+    const { tipo: _tipo, sexo: _sexo, tamano: _tamano, ...otherFields } = fields;
     const pet = await this.prisma.pet.update({
       where: { id },
       data: {
-        ...fields,
+        ...(fields.tipo && { tipo: fields.tipo as PetType }),
+        ...(fields.sexo && { sexo: fields.sexo as PetSex }),
+        ...(fields.tamano && { tamano: fields.tamano as PetSize }),
+        ...otherFields,
         ...(fotoUrl !== undefined && { foto: fotoUrl }),
       },
     });

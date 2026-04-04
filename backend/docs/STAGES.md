@@ -75,27 +75,40 @@ All routes require a valid JWT bearer token (enforced globally by `SessionGuard`
 - `UsersModule` — no extra imports needed (`PrismaModule` is global).
 - Password is stripped in `toResponse` via destructuring before returning any user object.
 
+**Frontend contract note:** `Usuario.id` is typed as `number` in the frontend but the DB uses UUID strings. The frontend will need to accept `string` for `id` when API integration is wired up.
+
 **Done when:** Full profile lifecycle works end-to-end via Swagger. Password is never returned in any response.
 
 ---
 
-## Stage 4 — Pets
+## Stage 4 — Pets ✓
 
 **Goal:** Users can manage their pets and upload a photo per pet to AWS S3.
 
-- [ ] Create `StorageService`: wraps `S3Client` from `@aws-sdk/client-s3`.
-  - `upload(buffer, mimetype, filename)`: uploads to the configured S3 bucket using `PutObjectCommand` and returns the public URL.
-  - `delete(key)`: removes the object from the bucket using `DeleteObjectCommand`.
-- [ ] In `PetService.toResponse()`, rename `tamano` → `tamaño` before returning (the DB column strips the accent; the frontend `Mascota` type uses the accented form).
-- [ ] `POST /pets`: Accept all `Mascota` fields except `id` and `foto`. `condicionesMedicas`, `numeroVeterinario`, and `cuidadosEspeciales` default to empty string if not provided. If no photo is uploaded, use the `AVATAR_API` env variable (Dicebear) with the pet's `nombre` as the seed to generate a default `foto` URL. Return the created `Mascota`.
-- [ ] `GET /pets`: Return all pets belonging to the authenticated user. Response is an array of `Mascota`.
-- [ ] `GET /pets/:id`: Return a single pet. Throw `404` if not found. Throw `403` if the pet does not belong to the current user.
-- [ ] `PATCH /pets/:id`: All fields optional. Verify ownership before updating. Return the updated `Mascota`.
-- [ ] `DELETE /pets/:id`: Verify ownership. Soft-delete by setting `isActive = false` (photo remains in S3). Return `204 No Content`.
-- [ ] Both `POST /pets` and `PATCH /pets/:id` accept `multipart/form-data`. The optional `foto` binary field handles photo upload on create and photo replacement on update (old S3 object deleted first). No separate photo endpoint — PATCH covers it.
-- [x] **Implementation Detail:** Create `NormalizeEncodingInterceptor` to handle a known issue where Swagger UI (and other clients) send `multipart/form-data` payload in Latin-1 instead of UTF-8. This interceptor must restore *mojibake* characters (e.g., `Ã±` to `ñ`) and map the incoming field `tamaño` to `tamano` so it can be processed correctly by the ASCII-safe DTO validations.
+- [x] `StorageService` (`src/storage/`): wraps `S3Client` singleton.
+  - `upload(buffer, mimetype, filename)`: generates a UUID key, uploads via `PutObjectCommand`, returns public URL.
+  - `delete(key)`: removes object via `DeleteObjectCommand`.
+  - `keyFromUrl(url)`: extracts the S3 key from a stored URL (handles both standard S3 and custom `AWS_ENDPOINT`).
+  - `StorageModule` is `@Global()` — imported in `AppModule` alongside infrastructure modules.
+- [x] `POST /pets`: accepts `multipart/form-data`. Required fields: `nombre`, `tipo`, `raza`, `anos`, `sexo`, `tamano`, `estadoVacunacion`. Optional: `meses`, `condicionesMedicas`, `numeroVeterinario`, `cuidadosEspeciales`, `foto` (binary). If no photo, `foto` defaults to the DiceBear avatar URL (`AVATAR_API` + encoded `nombre`).
+- [x] `GET /pets`: returns all active pets for the authenticated user.
+- [x] `GET /pets/:id`: returns a single pet. Throws `404` / `403` on missing or unauthorized.
+- [x] `PATCH /pets/:id`: all fields optional. Accepts optional `foto` file — replaces the old S3 object before uploading the new one. No separate photo endpoint.
+- [x] `DELETE /pets/:id`: soft-delete (`isActive = false`). Photo remains in S3. Returns `204 No Content`.
+- [x] `NormalizeEncodingInterceptor` applied to `PetsController`: repairs UTF-8-as-Latin-1 mojibake from Swagger/clients and maps accented field names (`tamaño → tamano`, `años → anos`) to their ASCII-safe DTO equivalents.
 
-**Done when:** Pet CRUD works and the uploaded photo URL is persisted and publicly accessible via S3.
+**Implementation notes:**
+- DB columns `tamano` and `anos` are ASCII-safe. `toResponse()` maps them back to `tamaño` and `años` for the response.
+- `tipo` accepts any string (not restricted to an enum) — custom pet types are valid.
+- Age split: `anos Int @default(0)` + `meses Int @default(0)`. Cross-field rule enforced in DTO: `anos=0` and `meses=0` is rejected.
+- All string enum fields (`tipo`, `sexo`, `tamano`) are lowercased via `@Transform` before validation.
+- `estadoVacunacion` is a free-text `String` field (not boolean).
+
+**Frontend contract gaps (resolve before integration):**
+- `Mascota.id`: frontend types `number`, backend returns UUID `string` → frontend needs `id: string`.
+- `Mascota.edad`: frontend has single `edad: number`, backend now returns `años: number` + `meses: number` → frontend needs to split the age field.
+
+**Done when:** Pet CRUD works end-to-end via Swagger. Photo URL is persisted and publicly accessible via S3.
 
 ---
 
@@ -103,9 +116,11 @@ All routes require a valid JWT bearer token (enforced globally by `SessionGuard`
 
 **Goal:** Room records exist in the DB and clients can query availability for a date range.
 
-- [X] Create a Prisma seed script that inserts a fixed set of rooms (e.g. 10 standard + 5 special). Register the seed command in `package.json` under `prisma.seed`.
-- [X] `GET /rooms`: Return all rooms.
-- [X] `GET /rooms/available?from=YYYY-MM-DD&to=YYYY-MM-DD`: Validate that both query params are valid dates. Return rooms where no reservation with `estado` in `(en progreso, confirmada)` has an overlapping date range. Overlap condition: `fechaEntrada < to AND fechaSalida > from`.
+- [x] Create a Prisma seed script that inserts a fixed set of rooms (e.g. 10 standard + 5 special). Register the seed command in `package.json` under `prisma.seed`.
+- [x] `GET /rooms`: Return all rooms. Response must match the frontend `Habitacion` type: `{ id: number, name: string }`.
+- [x] `GET /rooms/available?from=YYYY-MM-DD&to=YYYY-MM-DD`: Validate that both query params are valid dates. Return rooms where no reservation with `estado` in `(en progreso, confirmada)` has an overlapping date range. Overlap condition: `fechaEntrada < to AND fechaSalida > from`.
+
+**Frontend contract note:** `Habitacion.id` is typed as `number` in the frontend but the DB will use UUID strings. Align at integration time.
 
 **Done when:** Querying with a date range that has existing reservations excludes the occupied rooms correctly.
 
@@ -116,16 +131,24 @@ All routes require a valid JWT bearer token (enforced globally by `SessionGuard`
 **Goal:** Users can create, view, modify, and cancel reservations with full business rule enforcement.
 
 - [ ] `POST /reservations`:
-  - Accept: `mascotaId`, `habitacionId`, `fechaEntrada`, `fechaSalida`, `tipoHospedaje` (`estandar|especial`), `serviciosAdicionales?` (array of `bano|paseo|alimentacion especial`).
+  - Accept: `mascotaId`, `habitacionId`, `fechaEntrada`, `fechaSalida`, `esEspecial` (boolean), `serviciosAdicionales?` (string).
   - Throw `403` if `mascotaId` does not belong to the current user.
-  - Throw `400` if `serviciosAdicionales` is non-empty and `tipoHospedaje` is `estandar`.
+  - Throw `400` if `esEspecial` is false and `serviciosAdicionales` is provided.
   - Throw `409` if the room has an overlapping active reservation (same overlap query as Stage 5).
   - Create reservation with `estado = 'confirmada'`.
-  - Return a `Reserva` object: resolve `nombreMascota` from the pet relation and `habitacion` from the room's `numero` field.
-- [ ] `GET /reservations?estado=`: Return the authenticated user's reservations, optionally filtered by `estado`. Each item must match the `Reserva` type with resolved `nombreMascota` and `habitacion`.
+  - Return a `Reserva` object matching the frontend type: `{ id, nombreMascota, fechaEntrada, fechaSalida, habitacionId, estado, esEspecial, serviciosAdicionales? }`.
+- [ ] `GET /reservations?estado=`: Return the authenticated user's reservations, optionally filtered by `estado`.
 - [ ] `GET /reservations/:id`: Return full reservation detail. Throw `404` if not found, `403` if not the owner.
-- [ ] `PATCH /reservations/:id`: Allow updating `fechaEntrada`, `fechaSalida`, and `serviciosAdicionales`. Throw `400` if current `estado` is not `confirmada`. Re-validate room availability and service rules. Return updated `Reserva`.
+- [ ] `PATCH /reservations/:id`: Allow updating `fechaEntrada`, `fechaSalida`, `esEspecial`, and `serviciosAdicionales`. Throw `400` if current `estado` is not `confirmada`. Re-validate room availability and service rules. Return updated `Reserva`.
 - [ ] `DELETE /reservations/:id`: Verify ownership. Set `estado = 'cancelada'`. Return `204 No Content`.
+
+**Frontend `Reserva` type (from `frontend/src/types/index.ts`):**
+```typescript
+{ id: number; nombreMascota: string; fechaEntrada: string; fechaSalida: string;
+  habitacionId: number; estado: EstadoReserva; esEspecial: boolean; serviciosAdicionales?: string }
+```
+
+**Frontend contract note:** `Reserva.id` and `habitacionId` are typed as `number`, DB uses UUIDs. Align at integration time.
 
 **Done when:** Overlap conflict returns `409`, service rule violation returns `400`, and all responses match the `Reserva` type.
 
@@ -164,7 +187,7 @@ All routes require a valid JWT bearer token (enforced globally by `SessionGuard`
 Stage 1 — Foundation
   └── Stage 2 — Auth
         ├── Stage 3 — Users          (parallel)
-        ├── Stage 4 — Pets           (parallel)
+        ├── Stage 4 — Pets           (parallel) ✓
         │     └── Stage 6 — Reservations
         └── Stage 5 — Rooms          (parallel)
               └── Stage 6 — Reservations

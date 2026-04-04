@@ -2,6 +2,11 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Room } from '../../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
+type RoomResponse = {
+  id: string;
+  name: string;
+};
+
 @Injectable()
 export class RoomsService {
   constructor(private readonly prisma: PrismaService) {}

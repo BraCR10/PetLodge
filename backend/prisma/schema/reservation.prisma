@@ -1,19 +1,16 @@
 model Reservation {
-  // tipoHospedaje:        estandar | especial
-  // serviciosAdicionales: bano | paseo | alimentacion especial
-  // estado:               confirmada | en progreso | completada | cancelada
-  id                   String            @id @default(uuid())
+  id                   String              @id @default(uuid())
   fechaEntrada         DateTime
   fechaSalida          DateTime
-  tipoHospedaje        String
-  serviciosAdicionales String[]
-  estado               String            @default("confirmada")
-  fechaCreacion        DateTime          @default(now())
+  esEspecial           Boolean             @default(false)
+  serviciosAdicionales String?
+  estado               ReservationStatus   @default(CONFIRMADA)
+  fechaCreacion        DateTime            @default(now())
   userId               String
-  user                 User              @relation(fields: [userId], references: [id])
+  user                 User                @relation(fields: [userId], references: [id])
   mascotaId            String
-  pet                  Pet               @relation(fields: [mascotaId], references: [id])
+  pet                  Pet                 @relation(fields: [mascotaId], references: [id])
   habitacionId         String
-  room                 Room              @relation(fields: [habitacionId], references: [id])
+  room                 Room                @relation(fields: [habitacionId], references: [id])
   notificationLogs     NotificationLog[]
 }
