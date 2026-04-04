@@ -151,7 +151,7 @@ All routes require a valid JWT bearer token (enforced globally by `SessionGuard`
 - [x] `GET /notifications/templates`: return all templates.
 - [x] `GET /notifications/templates/:id`: return one template.
 - [x] `PATCH /notifications/templates/:id`: update `subject` and/or `body`.
-- [ ] `POST /notifications/send/:id`: manually trigger a send for a given template (for testing).
+- [x] `POST /notifications/send/:id`: manually trigger a send for a given template (for testing).
 - [ ] `GET /notifications/logs`: return the authenticated user's send log.
 
 **Done when:** Registering a user and creating/modifying a reservation trigger real emails. The send log reflects success or failure per notification.
