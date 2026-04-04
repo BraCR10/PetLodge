@@ -6,28 +6,29 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
-import { Usuario, ScreenProps } from '@/src/types';
+import { ScreenProps } from '@/src/types';
 import { useAuth } from '@/src/context/AuthContext';
 import { Colors, Spacing } from '@/src/utils/theme';
 import { styles } from './LoginScreen.styles';
 
 export const LoginScreen: React.FC<ScreenProps> = ({ navigation }) => {
-  const { setUser } = useAuth();
+  const { login, isLoading } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [generalError, setGeneralError] = useState('');
 
   const validateForm = () => {
     let isValid = true;
     setEmailError('');
     setPasswordError('');
+    setGeneralError('');
 
     if (!email) {
       setEmailError('El correo es requerido');
@@ -45,25 +46,17 @@ export const LoginScreen: React.FC<ScreenProps> = ({ navigation }) => {
     return isValid;
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!validateForm()) return;
 
-    // TODO: Replace with actual backend API call
-    // For now, create a hardcoded user from the entered email
-    const hardcodedUser: Usuario = {
-      id: 'user-1',
-      nombre: isAdmin ? 'Admin User' : 'Juan Pérez',
-      numeroIdentificacion: '123456789',
-      email: email,
-      numeroTelefono: '+506 2234 5678',
-      direccion: 'Calle Principal 123, San José',
-      fechaRegistro: new Date().toISOString().split('T')[0],
-      isAdmin: isAdmin,
-    };
-
-    setUser(hardcodedUser);
-    const destination = isAdmin ? 'Admin' : 'User';
-    navigation.getParent()?.replace(destination);
+    try {
+      setGeneralError('');
+      await login({ email, password });
+      // Navigation will happen automatically when user is set in context
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.error || 'Error al iniciar sesión';
+      setGeneralError(errorMessage);
+    }
   };
 
   return (
@@ -80,6 +73,25 @@ export const LoginScreen: React.FC<ScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={styles.form}>
+            {generalError ? (
+              <View style={{
+                backgroundColor: '#fee',
+                borderRadius: 8,
+                padding: Spacing.md,
+                marginBottom: Spacing.md,
+                borderLeftWidth: 4,
+                borderLeftColor: Colors.error || '#e74c3c',
+              }}>
+                <Text style={{
+                  color: Colors.error || '#c0392b',
+                  fontSize: 14,
+                  fontWeight: '500',
+                }}>
+                  {generalError}
+                </Text>
+              </View>
+            ) : null}
+
             <Input
               label="Correo electrónico"
               placeholder="tu@correo.com"
@@ -91,6 +103,7 @@ export const LoginScreen: React.FC<ScreenProps> = ({ navigation }) => {
               keyboardType="email-address"
               error={emailError}
               required
+              editable={!isLoading}
             />
 
             <Input
@@ -104,44 +117,23 @@ export const LoginScreen: React.FC<ScreenProps> = ({ navigation }) => {
               secureTextEntry
               error={passwordError}
               required
+              editable={!isLoading}
             />
-
-            <View style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingVertical: Spacing.md,
-              paddingHorizontal: Spacing.md,
-              backgroundColor: Colors.surface,
-              borderRadius: 8,
-              borderWidth: 1,
-              borderColor: Colors.border,
-              marginTop: Spacing.md,
-            }}>
-              <Text style={{
-                fontSize: 14,
-                color: Colors.text,
-                fontWeight: '500',
-              }}>Login as Admin</Text>
-              <Switch
-                value={isAdmin}
-                onValueChange={setIsAdmin}
-              />
-            </View>
           </View>
 
           <Button
-            title="Iniciar sesión"
+            title={isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             onPress={handleLogin}
             fullWidth
             size="lg"
+            disabled={isLoading}
           />
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>¿No tienes cuenta?</Text>
             <Text
               style={styles.link}
-              onPress={() => navigation.navigate('Register')}
+              onPress={() => !isLoading && navigation.navigate('Register')}
             >
               Registrarse
             </Text>

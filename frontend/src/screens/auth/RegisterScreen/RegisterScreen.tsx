@@ -10,9 +10,13 @@ import {
 import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { ScreenProps } from '@/src/types';
+import { useAuth } from '@/src/context/AuthContext';
+import { Colors, Spacing } from '@/src/utils/theme';
 import { styles } from './RegisterScreen.styles';
 
 export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
+  const { register: registerUser, isLoading } = useAuth();
+
   const [nombre, setNombre] = useState('');
   const [numeroIdentificacion, setNumeroIdentificacion] = useState('');
   const [email, setEmail] = useState('');
@@ -26,6 +30,7 @@ export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [numeroTelefonoError, setNumeroTelefonoError] = useState('');
   const [direccionError, setDireccionError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [generalError, setGeneralError] = useState('');
 
   const validateForm = () => {
     let isValid = true;
@@ -35,6 +40,7 @@ export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
     setNumeroTelefonoError('');
     setDireccionError('');
     setPasswordError('');
+    setGeneralError('');
 
     if (!nombre) {
       setNombreError('El nombre completo es requerido');
@@ -75,11 +81,24 @@ export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
     return isValid;
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!validateForm()) return;
 
-    // TODO: Call POST /auth/register with { nombre, numeroIdentificacion, email, password, numeroTelefono, direccion }
-    navigation.getParent()?.getParent()?.replace('User');
+    try {
+      setGeneralError('');
+      await registerUser({
+        nombre,
+        numeroIdentificacion,
+        email,
+        password,
+        numeroTelefono,
+        direccion,
+      });
+      // Navigation will happen automatically when user is set in context
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.error || 'Error al registrarse';
+      setGeneralError(errorMessage);
+    }
   };
 
   return (
@@ -95,6 +114,25 @@ export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={styles.form}>
+            {generalError ? (
+              <View style={{
+                backgroundColor: '#fee',
+                borderRadius: 8,
+                padding: Spacing.md,
+                marginBottom: Spacing.md,
+                borderLeftWidth: 4,
+                borderLeftColor: Colors.error || '#e74c3c',
+              }}>
+                <Text style={{
+                  color: Colors.error || '#c0392b',
+                  fontSize: 14,
+                  fontWeight: '500',
+                }}>
+                  {generalError}
+                </Text>
+              </View>
+            ) : null}
+
             <Input
               label="Nombre completo"
               placeholder="Juan Pérez"
@@ -105,6 +143,7 @@ export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
               }}
               error={nombreError}
               required
+              editable={!isLoading}
             />
 
             <Input
@@ -117,6 +156,7 @@ export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
               }}
               error={numeroIdentificacionError}
               required
+              editable={!isLoading}
             />
 
             <Input
@@ -130,6 +170,7 @@ export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
               keyboardType="email-address"
               error={emailError}
               required
+              editable={!isLoading}
             />
 
             <Input
@@ -143,6 +184,7 @@ export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
               keyboardType="phone-pad"
               error={numeroTelefonoError}
               required
+              editable={!isLoading}
             />
 
             <Input
@@ -155,6 +197,7 @@ export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
               }}
               error={direccionError}
               required
+              editable={!isLoading}
             />
 
             <Input
@@ -168,21 +211,23 @@ export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
               secureTextEntry
               error={passwordError}
               required
+              editable={!isLoading}
             />
           </View>
 
           <Button
-            title="Crear cuenta"
+            title={isLoading ? 'Registrando...' : 'Crear cuenta'}
             onPress={handleRegister}
             fullWidth
             size="lg"
+            disabled={isLoading}
           />
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>¿Ya tienes cuenta?</Text>
             <Text
               style={styles.link}
-              onPress={() => navigation.goBack()}
+              onPress={() => !isLoading && navigation.goBack()}
             >
               Iniciar sesión
             </Text>
