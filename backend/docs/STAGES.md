@@ -135,7 +135,7 @@ All routes require a valid JWT bearer token (enforced globally by `SessionGuard`
 
 **Goal:** Emails are sent automatically on key actions using templates stored in the database.
 
-- [ ] Add `NotificationTemplate` seeding to the Prisma seed script. Insert one record per notification type. Template body uses `{{key}}` placeholders. The `name`, `subject`, and `body` fields must match the `NotificationTemplate` mobile type.
+- [X] Add `NotificationTemplate` seeding to the Prisma seed script. Insert one record per notification type. Template body uses `{{key}}` placeholders. The `name`, `subject`, and `body` fields must match the `NotificationTemplate` mobile type.
 - [ ] Create `NotificationsService`:
   - `send(templateId, userId, variables?, reservaId?)`:
     1. Load the template from DB.

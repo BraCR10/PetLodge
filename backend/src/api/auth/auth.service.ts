@@ -1,8 +1,9 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { User } from '../../../generated/prisma/client';
+import { TipoNotificacion, User } from '../../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -11,6 +12,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -35,6 +37,11 @@ export class AuthService {
         numeroTelefono: dto.numeroTelefono,
         direccion: dto.direccion,
       },
+    });
+
+    await this.notificationsService.sendByType(TipoNotificacion.REGISTRO_USUARIO, user.id, {
+      name: user.nombre,
+      email: user.email,
     });
 
     return {
