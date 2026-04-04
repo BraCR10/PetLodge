@@ -150,7 +150,7 @@ All routes require a valid JWT bearer token (enforced globally by `SessionGuard`
 - [TEST] Wire `NotificationsService` into `AuthService` (call on register) and `ReservationsService` (call on create and update).
 - [x] `GET /notifications/templates`: return all templates.
 - [x] `GET /notifications/templates/:id`: return one template.
-- [ ] `PATCH /notifications/templates/:id`: update `subject` and/or `body`.
+- [x] `PATCH /notifications/templates/:id`: update `subject` and/or `body`.
 - [ ] `POST /notifications/send/:id`: manually trigger a send for a given template (for testing).
 - [ ] `GET /notifications/logs`: return the authenticated user's send log.
 

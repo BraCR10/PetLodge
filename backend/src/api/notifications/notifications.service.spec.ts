@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { NotFoundException } from '@nestjs/common';
-import { TipoNotificacion } from '../../../generated/prisma/client';
+import { Prisma, TipoNotificacion } from '../../../generated/prisma/client';
 import { NotificationsService } from './notifications.service';
 
 describe('NotificationsService', () => {
@@ -23,7 +23,7 @@ describe('NotificationsService', () => {
 
   let service: NotificationsService;
   let prisma: {
-    notificationTemplate: { findMany: jest.Mock; findUnique: jest.Mock };
+    notificationTemplate: { findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
     user: { findUnique: jest.Mock };
     reservation: { findUnique: jest.Mock };
     notificationLog: { create: jest.Mock; findMany: jest.Mock };
@@ -41,6 +41,7 @@ describe('NotificationsService', () => {
       notificationTemplate: {
         findMany: jest.fn().mockResolvedValue([template]),
         findUnique: jest.fn().mockResolvedValue(template),
+        update: jest.fn().mockResolvedValue(template),
       },
       user: {
         findUnique: jest.fn().mockResolvedValue(user),
@@ -104,6 +105,47 @@ describe('NotificationsService', () => {
     await expect(service.findOne('missing-template')).rejects.toThrow(NotFoundException);
     expect(prisma.notificationTemplate.findUnique).toHaveBeenCalledWith({
       where: { id: 'missing-template' },
+    });
+  });
+
+  it('updates the notification template subject and keeps body unchanged when omitted', async () => {
+    const updatedTemplate = {
+      ...template,
+      subject: 'Reserva confirmada para {{name}}',
+    };
+    prisma.notificationTemplate.update.mockResolvedValueOnce(updatedTemplate);
+
+    const result = await service.update(template.id, {
+      subject: updatedTemplate.subject,
+    });
+
+    expect(result).toEqual(updatedTemplate);
+    expect(prisma.notificationTemplate.update).toHaveBeenCalledWith({
+      where: { id: template.id },
+      data: {
+        subject: updatedTemplate.subject,
+      },
+    });
+  });
+
+  it('throws not found when updating a missing notification template', async () => {
+    prisma.notificationTemplate.update.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError('Record to update not found.', {
+        code: 'P2025',
+        clientVersion: 'test',
+      }),
+    );
+
+    await expect(
+      service.update('missing-template', {
+        body: 'Nuevo cuerpo',
+      }),
+    ).rejects.toThrow(NotFoundException);
+    expect(prisma.notificationTemplate.update).toHaveBeenCalledWith({
+      where: { id: 'missing-template' },
+      data: {
+        body: 'Nuevo cuerpo',
+      },
     });
   });
 
