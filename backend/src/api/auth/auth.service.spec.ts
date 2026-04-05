@@ -49,9 +49,7 @@ describe('AuthService', () => {
   });
 
   it('sends the registration notification after creating the user', async () => {
-    (jest.spyOn(bcrypt, 'hash') as jest.MockedFunction<typeof bcrypt.hash>).mockResolvedValue(
-      'hashed-password',
-    );
+    jest.spyOn(bcrypt, 'hash').mockImplementation(async () => 'hashed-password');
     prisma.user.findFirst.mockResolvedValue(null);
     prisma.user.create.mockResolvedValue({
       id: 'user-1',
