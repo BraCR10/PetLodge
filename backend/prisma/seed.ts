@@ -1,8 +1,4 @@
-//Script that seeds the database with initial data for rooms. 
-//It creates 10 standard rooms and 5 special rooms, all marked as available.
-//The script uses the Prisma Client to perform upsert operations, ensuring 
-//that if a room with the same number already exists, it will be updated 
-//instead of creating a duplicate entry.
+// Script that seeds the database with initial room data and notification templates.
 import 'dotenv/config';
 import { PrismaNeonHttp } from '@prisma/adapter-neon';
 import { PrismaClient, TipoNotificacion } from '../generated/prisma/client';
@@ -19,14 +15,10 @@ const prisma = new PrismaClient({
 
 const standardRooms = Array.from({ length: 10 }, (_, index) => ({
   numero: `Habitación ${index + 1}`,
-  tipo: 'estandar',
-  isAvailable: true,
 }));
 
 const specialRooms = Array.from({ length: 5 }, (_, index) => ({
   numero: `Habitación ${index + 11}`,
-  tipo: 'especial',
-  isAvailable: true,
 }));
 
 const rooms = [...standardRooms, ...specialRooms];
@@ -105,10 +97,7 @@ async function main(): Promise<void> {
     ...rooms.map((room) =>
       prisma.room.upsert({
         where: { numero: room.numero },
-        update: {
-          tipo: room.tipo,
-          isAvailable: room.isAvailable,
-        },
+        update: {},
         create: room,
       }),
     ),

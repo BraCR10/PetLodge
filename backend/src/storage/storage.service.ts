@@ -41,12 +41,19 @@ export class StorageService {
   }
 
   async delete(key: string): Promise<void> {
-    await this.s3.send(
-      new DeleteObjectCommand({
-        Bucket: this.bucket,
-        Key: key,
-      }),
-    );
+    try {
+      await this.s3.send(
+        new DeleteObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        }),
+      );
+    } catch (error) {
+      // Ignore NoSuchKey errors; file may have been deleted already
+      if (error instanceof Error && error.name !== 'NoSuchKey') {
+        throw error;
+      }
+    }
   }
 
   // Extracts the S3 object key from a URL previously returned by upload().

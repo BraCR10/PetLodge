@@ -6,10 +6,4 @@ export class RoomResponseDto {
 
   @ApiProperty({ example: '101' })
   numero: string;
-
-  @ApiProperty({ example: 'estandar' })
-  tipo: string;
-
-  @ApiProperty({ example: true })
-  isAvailable: boolean;
 }

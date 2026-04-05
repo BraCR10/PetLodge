@@ -5,13 +5,20 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, TipoNotificacion } from '../../../generated/prisma/client';
+import {
+  Prisma,
+  ReservationStatus,
+  TipoNotificacion,
+} from '../../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 
-const ACTIVE_RESERVATION_STATUSES = ['confirmada', 'en progreso'] as const;
+const ACTIVE_RESERVATION_STATUSES = [
+  ReservationStatus.CONFIRMADA,
+  ReservationStatus.EN_PROGRESO,
+] as const;
 
 const reservationInclude = {
   pet: {
@@ -26,8 +33,6 @@ const reservationInclude = {
     select: {
       id: true,
       numero: true,
-      tipo: true,
-      isAvailable: true,
     },
   },
 } satisfies Prisma.ReservationInclude;
@@ -53,19 +58,35 @@ export class ReservationsService {
     this.assertAdditionalServices(dto.tipoHospedaje, dto.serviciosAdicionales ?? []);
     await this.assertRoomAvailability(dto.habitacionId, fechaEntrada, fechaSalida);
 
-    const reservation = await this.prisma.reservation.create({
+    // Create without include to avoid Neon HTTP adapter transaction limitation
+    await this.prisma.reservation.create({
       data: {
         userId,
         mascotaId: pet.id,
         habitacionId: dto.habitacionId,
         fechaEntrada,
         fechaSalida,
-        tipoHospedaje: dto.tipoHospedaje,
-        serviciosAdicionales: dto.serviciosAdicionales ?? [],
-        estado: 'confirmada',
+        esEspecial: dto.tipoHospedaje === 'especial',
+        serviciosAdicionales: this.serializeAdditionalServices(dto.serviciosAdicionales ?? []),
+        estado: ReservationStatus.CONFIRMADA,
+      },
+    });
+
+    // Fetch with relations separately
+    const reservation = await this.prisma.reservation.findFirst({
+      where: {
+        userId,
+        mascotaId: pet.id,
+        habitacionId: dto.habitacionId,
+        fechaEntrada,
+        fechaSalida,
       },
       include: reservationInclude,
     });
+
+    if (!reservation) {
+      throw new Error('Failed to fetch created reservation');
+    }
 
     await this.notificationsService.sendByType(
       TipoNotificacion.CONFIRMACION_RESERVA,
@@ -77,7 +98,7 @@ export class ReservationsService {
     return this.toResponse(reservation);
   }
 
-  async findAll(userId: string, estado?: string) {
+  async findAll(userId: string, estado?: ReservationStatus) {
     const reservations = await this.prisma.reservation.findMany({
       where: {
         userId,
@@ -98,7 +119,7 @@ export class ReservationsService {
   async update(id: string, userId: string, dto: UpdateReservationDto) {
     const reservation = await this.assertReservationOwnership(id, userId);
 
-    if (reservation.estado !== 'confirmada') {
+    if (reservation.estado !== ReservationStatus.CONFIRMADA) {
       throw new BadRequestException('Solo se pueden modificar reservas en estado confirmada');
     }
 
@@ -118,8 +139,9 @@ export class ReservationsService {
       : reservation.fechaSalida;
     this.assertDateRange(fechaEntrada, fechaSalida);
 
-    const serviciosAdicionales = dto.serviciosAdicionales ?? reservation.serviciosAdicionales;
-    this.assertAdditionalServices(reservation.tipoHospedaje, serviciosAdicionales);
+    const currentAdditionalServices = this.parseAdditionalServices(reservation.serviciosAdicionales);
+    const serviciosAdicionales = dto.serviciosAdicionales ?? currentAdditionalServices;
+    this.assertAdditionalServices(reservation.esEspecial ? 'especial' : 'estandar', serviciosAdicionales);
     await this.assertRoomAvailability(
       reservation.habitacionId,
       fechaEntrada,
@@ -127,15 +149,25 @@ export class ReservationsService {
       reservation.id,
     );
 
-    const updatedReservation = await this.prisma.reservation.update({
+    // Update without include to avoid Neon HTTP adapter transaction limitation
+    await this.prisma.reservation.update({
       where: { id: reservation.id },
       data: {
         fechaEntrada,
         fechaSalida,
-        serviciosAdicionales,
+        serviciosAdicionales: this.serializeAdditionalServices(serviciosAdicionales),
       },
+    });
+
+    // Fetch with relations separately
+    const updatedReservation = await this.prisma.reservation.findUnique({
+      where: { id: reservation.id },
       include: reservationInclude,
     });
+
+    if (!updatedReservation) {
+      throw new Error('Failed to fetch updated reservation');
+    }
 
     await this.notificationsService.sendByType(
       TipoNotificacion.MODIFICACION_RESERVA,
@@ -151,7 +183,7 @@ export class ReservationsService {
     await this.assertReservationOwnership(id, userId);
     await this.prisma.reservation.update({
       where: { id },
-      data: { estado: 'cancelada' },
+      data: { estado: ReservationStatus.CANCELADA },
     });
   }
 
@@ -291,6 +323,25 @@ export class ReservationsService {
     return date.toISOString().slice(0, 10);
   }
 
+  private parseAdditionalServices(value: string | null): string[] {
+    if (!value) {
+      return [];
+    }
+
+    return value
+      .split(',')
+      .map((service) => service.trim())
+      .filter((service) => service.length > 0);
+  }
+
+  private serializeAdditionalServices(services: string[]): string | null {
+    if (services.length === 0) {
+      return null;
+    }
+
+    return services.join(',');
+  }
+
   private toResponse(reservation: ReservationWithRelations) {
     return {
       id: reservation.id,
@@ -300,9 +351,9 @@ export class ReservationsService {
       habitacion: reservation.room.numero,
       fechaEntrada: this.formatDateForResponse(reservation.fechaEntrada),
       fechaSalida: this.formatDateForResponse(reservation.fechaSalida),
-      tipoHospedaje: reservation.tipoHospedaje,
-      esEspecial: reservation.tipoHospedaje === 'especial',
-      serviciosAdicionales: reservation.serviciosAdicionales,
+      tipoHospedaje: reservation.esEspecial ? 'especial' : 'estandar',
+      esEspecial: reservation.esEspecial,
+      serviciosAdicionales: this.parseAdditionalServices(reservation.serviciosAdicionales),
       estado: reservation.estado,
       fechaCreacion: reservation.fechaCreacion.toISOString(),
     };

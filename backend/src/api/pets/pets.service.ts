@@ -81,7 +81,11 @@ export class PetsService {
     let fotoUrl: string | undefined;
     if (file) {
       if (existing.foto) {
-        await this.storage.delete(this.storage.keyFromUrl(existing.foto));
+        try {
+          await this.storage.delete(this.storage.keyFromUrl(existing.foto));
+        } catch {
+          // Silently ignore deletion errors; proceed with upload
+        }
       }
       fotoUrl = await this.storage.upload(file.buffer, file.mimetype, file.originalname);
     }

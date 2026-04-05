@@ -2,11 +2,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Room } from '../../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
-type RoomResponse = {
-  id: string;
-  name: string;
-};
-
 @Injectable()
 export class RoomsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -29,7 +24,7 @@ export class RoomsService {
       where: {
         reservations: {
           none: {
-            estado: { in: ['en progreso', 'confirmada'] },
+            estado: { in: ['EN_PROGRESO', 'CONFIRMADA'] },
             fechaEntrada: { lt: toDate },
             fechaSalida: { gt: fromDate },
           },

@@ -31,7 +31,7 @@ export class ReservationResponseDto {
   @ApiProperty({ type: [String], example: ['bano', 'paseo'] })
   serviciosAdicionales: string[];
 
-  @ApiProperty({ example: 'confirmada' })
+  @ApiProperty({ example: 'CONFIRMADA' })
   estado: string;
 
   @ApiProperty({ example: '2026-04-01T16:10:00.000Z' })
