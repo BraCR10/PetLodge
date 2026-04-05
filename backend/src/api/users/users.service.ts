@@ -21,13 +21,10 @@ export class UsersService {
         where: {
           AND: [
             {
-              OR: [
-                { email: dto.email },
-                { numeroIdentificacion: dto.numeroIdentificacion },
-              ],
+              OR: [{ email: dto.email }, { numeroIdentificacion: dto.numeroIdentificacion }],
             },
             {
-              NOT: { id: userId },  // Exclude current user
+              NOT: { id: userId }, // Exclude current user
             },
           ],
         },

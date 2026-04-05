@@ -9,8 +9,7 @@ describe('NotificationsService', () => {
     tipo: TipoNotificacion.REGISTRO_USUARIO,
     name: 'Registro de usuario',
     subject: 'Bienvenido {{name}}{{missingSuffix}}',
-    body:
-      'Hola {{name}},\n\nTu correo es {{email}}.\n\nMascota: {{petName}}\nHabitacion: {{roomNumber}}',
+    body: 'Hola {{name}},\n\nTu correo es {{email}}.\n\nMascota: {{petName}}\nHabitacion: {{roomNumber}}',
     variables: ['name', 'email', 'petName', 'missingSuffix'],
   };
 

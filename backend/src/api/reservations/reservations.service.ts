@@ -5,11 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  Prisma,
-  ReservationStatus,
-  TipoNotificacion,
-} from '../../../generated/prisma/client';
+import { Prisma, ReservationStatus, TipoNotificacion } from '../../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
@@ -139,9 +135,14 @@ export class ReservationsService {
       : reservation.fechaSalida;
     this.assertDateRange(fechaEntrada, fechaSalida);
 
-    const currentAdditionalServices = this.parseAdditionalServices(reservation.serviciosAdicionales);
+    const currentAdditionalServices = this.parseAdditionalServices(
+      reservation.serviciosAdicionales,
+    );
     const serviciosAdicionales = dto.serviciosAdicionales ?? currentAdditionalServices;
-    this.assertAdditionalServices(reservation.esEspecial ? 'especial' : 'estandar', serviciosAdicionales);
+    this.assertAdditionalServices(
+      reservation.esEspecial ? 'especial' : 'estandar',
+      serviciosAdicionales,
+    );
     await this.assertRoomAvailability(
       reservation.habitacionId,
       fechaEntrada,
@@ -222,7 +223,10 @@ export class ReservationsService {
     }
   }
 
-  private async assertReservationOwnership(id: string, userId: string): Promise<ReservationWithRelations> {
+  private async assertReservationOwnership(
+    id: string,
+    userId: string,
+  ): Promise<ReservationWithRelations> {
     const reservation = await this.prisma.reservation.findUnique({
       where: { id },
       include: reservationInclude,

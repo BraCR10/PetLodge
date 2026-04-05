@@ -63,10 +63,7 @@ export class NotificationsService {
         },
       });
     } catch (error: unknown) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         throw new NotFoundException('Plantilla de notificacion no encontrada');
       }
 
@@ -133,23 +130,19 @@ export class NotificationsService {
     variables: NotificationVariables = {},
     reservaId?: string,
   ): Promise<SendResult> {
-    let template:
-      | {
-          id: string;
-          tipo: TipoNotificacion;
-          subject: string;
-          body: string;
-          variables: string[];
-        }
-      | null = null;
-    let user:
-      | {
-          id: string;
-          nombre: string;
-          email: string;
-          isActive: boolean;
-        }
-      | null = null;
+    let template: {
+      id: string;
+      tipo: TipoNotificacion;
+      subject: string;
+      body: string;
+      variables: string[];
+    } | null = null;
+    let user: {
+      id: string;
+      nombre: string;
+      email: string;
+      isActive: boolean;
+    } | null = null;
     let resolvedReservaId: string | null = null;
 
     try {
@@ -416,13 +409,11 @@ export class NotificationsService {
     return body.replace(/\s+/g, ' ').trim().slice(0, 140);
   }
 
-  private getLogoAttachment():
-    | {
-        filename: string;
-        path: string;
-        cid: string;
-      }
-    | null {
+  private getLogoAttachment(): {
+    filename: string;
+    path: string;
+    cid: string;
+  } | null {
     const logoPath = this.resolveLogoPath();
 
     if (!logoPath) {
@@ -447,7 +438,9 @@ export class NotificationsService {
     const logoPath = candidates.find((candidate) => existsSync(candidate));
 
     if (!logoPath) {
-      this.logger.warn('PetLodge email logo was not found. Emails will be sent without inline logo.');
+      this.logger.warn(
+        'PetLodge email logo was not found. Emails will be sent without inline logo.',
+      );
       return null;
     }
 
