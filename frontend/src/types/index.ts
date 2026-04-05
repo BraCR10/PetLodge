@@ -8,7 +8,7 @@ export type SexoMascota = 'macho' | 'hembra';
 export type TamañoMascota = 'pequeño' | 'mediano' | 'grande';
 
 // Estados de reserva
-export type EstadoReserva = 'en progreso' | 'confirmada' | 'completada' | 'cancelada';
+export type EstadoReserva = 'CONFIRMADA' | 'EN_PROGRESO' | 'COMPLETADA' | 'CANCELADA' | 'en progreso' | 'confirmada' | 'completada' | 'cancelada';
 
 // Interfaz para mascota
 export type Mascota = {
@@ -36,13 +36,17 @@ export type Habitacion = {
 // Interfaz para reserva
 export type Reserva = {
   id: string;
+  mascotaId: string;
+  habitacionId: string;
   nombreMascota: string;
+  habitacion: string;
   fechaEntrada: string;
   fechaSalida: string;
-  habitacionId: string;
-  estado: EstadoReserva;
+  tipoHospedaje: string;
   esEspecial: boolean;
-  serviciosAdicionales?: string[];
+  serviciosAdicionales: string[];
+  estado: EstadoReserva;
+  fechaCreacion: string;
 };
 
 // Interfaz para usuario
