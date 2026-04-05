@@ -206,9 +206,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
         serviciosAdicionales: esEspecial ? serviciosAdicionales : undefined,
       });
 
-      Alert.alert('Éxito', 'Reserva creada correctamente', [
-        { text: 'Aceptar', onPress: () => navigation.goBack() },
-      ]);
+      navigation.navigate('Reservations');
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || err?.message || 'Error al crear reserva';
       Alert.alert('Error', errorMessage);
