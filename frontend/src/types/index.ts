@@ -19,7 +19,7 @@ export type Mascota = {
   anos: number;
   meses: number;
   sexo: SexoMascota;
-  tamaño: TamañoMascota;
+  tamano: TamañoMascota;
   estadoVacunacion: string;
   condicionesMedicas: string;
   numeroVeterinario: string;
