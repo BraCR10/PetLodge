@@ -5,14 +5,17 @@ import {
   SafeAreaView,
   ScrollView,
   Pressable,
+  Alert,
 } from 'react-native';
 import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { Spacing } from '@/src/utils/theme';
 import { ScreenProps } from '@/src/types';
+import { useAuth } from '@/src/context/AuthContext';
 import { styles } from './HomeScreen.styles';
 
 export const HomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
+  const { logout } = useAuth();
   const user = { name: 'Guest User' };
 
   const quickActions = [
@@ -40,7 +43,16 @@ export const HomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
   ];
 
   const handleLogout = () => {
-    navigation.getParent()?.getParent()?.replace('Auth');
+    Alert.alert('Cerrar sesión', '¿Estás seguro de que quieres cerrar sesión?', [
+      { text: 'Cancelar', onPress: () => {} },
+      {
+        text: 'Cerrar sesión',
+        onPress: async () => {
+          await logout();
+        },
+        style: 'destructive',
+      },
+    ]);
   };
 
   return (

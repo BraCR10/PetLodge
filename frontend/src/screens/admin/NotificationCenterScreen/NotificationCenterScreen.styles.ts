@@ -134,4 +134,36 @@ export const styles = StyleSheet.create({
   saveButton: {
     marginBottom: Spacing.lg,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 300,
+  },
+  loadingText: {
+    ...Typography.body,
+    color: Colors.textSecondary,
+    marginTop: Spacing.md,
+  },
+  errorContainer: {
+    backgroundColor: '#FEE',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: '#FCC',
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  errorText: {
+    ...Typography.body,
+    color: Colors.danger,
+  },
+  emptyContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 300,
+  },
+  emptyText: {
+    ...Typography.body,
+    color: Colors.textSecondary,
+  },
 });

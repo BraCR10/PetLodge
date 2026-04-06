@@ -170,7 +170,7 @@ All routes require a valid JWT bearer token (enforced globally by `SessionGuard`
   - `findOne(id)`: return one template by id, throw `404` if not found.
   - `update(id, dto)`: update `subject` and/or `body`.
   - `findLogs(userId)`: return send history for the user, ordered by `fechaEnvio` descending.
-- [TEST] Wire `NotificationsService` into `AuthService` (call on register) and `ReservationsService` (call on create and update).
+- [x] Wire `NotificationsService` into `AuthService` (call on register) and `ReservationsService` (call on create and update).
 - [x] `GET /notifications/templates`: return all templates.
 - [x] `GET /notifications/templates/:id`: return one template.
 - [x] `PATCH /notifications/templates/:id`: update `subject` and/or `body`.

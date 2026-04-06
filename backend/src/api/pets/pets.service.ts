@@ -51,19 +51,19 @@ export class PetsService {
       },
     });
 
-    return this.toResponse(pet);
+    return await this.toResponse(pet);
   }
 
   async findAll(userId: string): Promise<PetResponse[]> {
     const pets = await this.prisma.pet.findMany({ where: { userId, isActive: true } });
-    return pets.map((p) => this.toResponse(p));
+    return Promise.all(pets.map((p) => this.toResponse(p)));
   }
 
   async findOne(id: string, userId: string): Promise<PetResponse> {
     const pet = await this.prisma.pet.findUnique({ where: { id } });
     if (!pet) throw new NotFoundException('Mascota no encontrada');
     if (pet.userId !== userId) throw new ForbiddenException();
-    return this.toResponse(pet);
+    return await this.toResponse(pet);
   }
 
   async update(
@@ -103,7 +103,7 @@ export class PetsService {
       },
     });
 
-    return this.toResponse(pet);
+    return await this.toResponse(pet);
   }
 
   async remove(id: string, userId: string): Promise<void> {
@@ -122,11 +122,15 @@ export class PetsService {
     return pet;
   }
 
-  private toResponse(pet: Pet): PetResponse {
+  private async toResponse(pet: Pet): Promise<PetResponse> {
     const { tamano, anos, userId: _userId, foto, ...rest } = pet;
 
-    const fotoFinal =
+    const rawFoto =
       foto ?? `${this.config.getOrThrow<string>('AVATAR_API')}${encodeURIComponent(rest.nombre)}`;
+
+    // S3 URLs are pre-signed so the mobile client can access private bucket objects.
+    // DiceBear fallback URLs are public and returned unchanged.
+    const fotoFinal = await this.storage.presignUrl(rawFoto);
 
     return { ...rest, tamaño: tamano, años: anos, foto: fotoFinal };
   }

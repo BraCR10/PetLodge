@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,57 +8,31 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { Mascota, Habitacion, ScreenProps } from '@/src/types';
+import { petsService } from '@/src/services/api/pets.service';
+import { roomsService } from '@/src/services/api/rooms.service';
+import { reservationsService } from '@/src/services/api/reservations.service';
+import { Colors } from '@/src/utils/theme';
 import { styles } from './NewReservationScreen.styles';
 
 const isWeb = Platform.OS === 'web';
 
-const opcionesMascotas: Mascota[] = [
-  { 
-    id: "1", 
-    nombre: 'Max', 
-    tipo: 'perro', 
-    raza: 'Golden Retriever', 
-    anos: 3,
-    meses: 6,
-    sexo: 'macho',
-    tamaño: 'grande',
-    estadoVacunacion: 'vacunado',
-    condicionesMedicas: 'Ninguna',
-    numeroVeterinario: '+506 2234-5678',
-    cuidadosEspeciales: 'Requiere baño mensual y cepillado frecuente',
-  },
-  { 
-    id: "2", 
-    nombre: 'Luna', 
-    tipo: 'gato', 
-    raza: 'Persa', 
-    anos: 2,
-    meses: 3,
-    sexo: 'hembra',
-    tamaño: 'pequeño',
-    estadoVacunacion: 'vacunado',
-    condicionesMedicas: 'Alergia a ciertos alimentos',
-    numeroVeterinario: '+506 2234-5678',
-    cuidadosEspeciales: 'Debe estar en interiores',
-  },
-];
-
-const habitaciones: Habitacion[] = [
-  { id: "1", name: 'Habitación Estándar A' },
-  { id: "2", name: 'Habitación Estándar B' },
-  { id: "3", name: 'Habitación Premium' },
-  { id: "4", name: 'Suite Deluxe' },
-];
-
 export const NewReservationScreen: React.FC<ScreenProps> = ({
   navigation,
 }) => {
+  const [pets, setPets] = useState<Mascota[]>([]);
+  const [rooms, setRooms] = useState<Habitacion[]>([]);
+  const [loadingPets, setLoadingPets] = useState(true);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  const [generalError, setGeneralError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [fechaEntrada, setFechaEntrada] = useState<Date | null>(null);
   const [fechaSalida, setFechaSalida] = useState<Date | null>(null);
@@ -70,12 +44,62 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
   const [esEspecial, setEsEspecial] = useState(false);
   const [serviciosAdicionales, setServiciosAdicionales] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [roomsSearched, setRoomsSearched] = useState(false);
 
   const serviciosDisponibles = [
     { id: 'bano', label: 'Baño', icon: '🛁' },
     { id: 'paseo', label: 'Paseo', icon: '🚶' },
-    { id: 'alimentacion-especial', label: 'Alimentación especial', icon: '🍗' },
+    { id: 'alimentacion especial', label: 'Alimentación especial', icon: '🍗' },
   ];
+
+  // Load pets on mount
+  useEffect(() => {
+    loadPets();
+  }, []);
+
+  const loadPets = async () => {
+    try {
+      setLoadingPets(true);
+      setGeneralError(null);
+      const data = await petsService.getPets();
+      setPets(data as Mascota[]);
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar mascotas';
+      setGeneralError(errorMessage);
+    } finally {
+      setLoadingPets(false);
+    }
+  };
+
+  // Load rooms when dates are selected
+  const loadAvailableRooms = async () => {
+    if (isWeb) {
+      if (!fechaEntradaWeb || !fechaSalidaWeb) return;
+    } else {
+      if (!fechaEntrada || !fechaSalida) return;
+    }
+
+    try {
+      setLoadingRooms(true);
+      const fromDate = isWeb ? fechaEntradaWeb : format(fechaEntrada!, 'yyyy-MM-dd');
+      const toDate = isWeb ? fechaSalidaWeb : format(fechaSalida!, 'yyyy-MM-dd');
+      const data = await roomsService.getAvailableRooms(fromDate, toDate);
+      setRooms(
+        data.map((room) => ({
+          id: room.id,
+          name: room.numero,
+        }))
+      );
+      setSelectedHabitacionId(null); // Reset room selection when dates change
+      setRoomsSearched(true); // Mark that we've searched
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar habitaciones';
+      Alert.alert('Error', errorMessage);
+      setRoomsSearched(true); // Mark that we attempted a search
+    } finally {
+      setLoadingRooms(false);
+    }
+  };
 
   const toggleServicio = (servicioId: string) => {
     setServiciosAdicionales(prev =>
@@ -123,6 +147,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
     }
     if (selectedDate) {
       setFechaEntrada(selectedDate);
+      setRoomsSearched(false); // Reset search flag when dates change
     }
   };
 
@@ -132,7 +157,17 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
     }
     if (selectedDate) {
       setFechaSalida(selectedDate);
+      setRoomsSearched(false); // Reset search flag when dates change
     }
+  };
+
+  const handleWebDateChange = (field: 'entrada' | 'salida', value: string) => {
+    if (field === 'entrada') {
+      setFechaEntradaWeb(value);
+    } else {
+      setFechaSalidaWeb(value);
+    }
+    setRoomsSearched(false); // Reset search flag when dates change
   };
 
   const calculateNights = () => {
@@ -147,14 +182,41 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    const reservationType = esEspecial ? 'especial' : 'estándar';
-    Alert.alert('Éxito', `La reserva ${reservationType} se ha creado en este demo.`, [
-      { text: 'Aceptar', onPress: () => navigation.goBack() },
-    ]);
+    try {
+      setIsSubmitting(true);
+      const fromDate = isWeb ? fechaEntradaWeb : format(fechaEntrada!, 'yyyy-MM-dd');
+      const toDate = isWeb ? fechaSalidaWeb : format(fechaSalida!, 'yyyy-MM-dd');
+
+      await reservationsService.createReservation({
+        mascotaId: selectedPetId!,
+        habitacionId: selectedHabitacionId!,
+        fechaEntrada: fromDate,
+        fechaSalida: toDate,
+        tipoHospedaje: esEspecial ? 'especial' : 'estandar',
+        serviciosAdicionales: esEspecial ? serviciosAdicionales : undefined,
+      });
+
+      navigation.navigate('Reservations');
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || err?.message || 'Error al crear reserva';
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (loadingPets) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={[styles.content, { justifyContent: 'center', alignItems: 'center', flex: 1 }]}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -165,6 +227,12 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>Nueva reserva</Text>
 
+          {generalError && (
+            <View style={{ backgroundColor: Colors.error + '20', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+              <Text style={{ color: Colors.error }}>{generalError}</Text>
+            </View>
+          )}
+
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Seleccionar mascota</Text>
             {errors.mascota && (
@@ -173,23 +241,27 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
               </Text>
             )}
             <View style={styles.petSelector}>
-              {opcionesMascotas.map((mascota) => (
-                <Pressable
-                  key={mascota.id}
-                  onPress={() => setSelectedPetId(mascota.id)}
-                  style={[
-                    styles.petOption,
-                    selectedPetId === mascota.id && styles.petOptionSelected,
-                  ]}
-                >
-                  <Text style={styles.petOptionText}>
-                    {mascota.nombre} • {mascota.raza}
-                  </Text>
-                  <Text style={styles.petOptionIcon}>
-                    {mascota.tipo === 'perro' ? '🐕' : mascota.tipo === 'gato' ? '🐈' : '🐾'}
-                  </Text>
-                </Pressable>
-              ))}
+              {pets.length === 0 ? (
+                <Text style={styles.errorText}>No tienes mascotas registradas</Text>
+              ) : (
+                pets.map((mascota) => (
+                  <Pressable
+                    key={mascota.id}
+                    onPress={() => setSelectedPetId(mascota.id)}
+                    style={[
+                      styles.petOption,
+                      selectedPetId === mascota.id && styles.petOptionSelected,
+                    ]}
+                  >
+                    <Text style={styles.petOptionText}>
+                      {mascota.nombre} • {mascota.raza}
+                    </Text>
+                    <Text style={styles.petOptionIcon}>
+                      {mascota.tipo === 'perro' ? '🐕' : mascota.tipo === 'gato' ? '🐈' : '🐾'}
+                    </Text>
+                  </Pressable>
+                ))
+              )}
             </View>
           </View>
 
@@ -201,7 +273,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
                   label="Fecha de entrada"
                   placeholder="2026-04-01"
                   value={fechaEntradaWeb}
-                  onChangeText={setFechaEntradaWeb}
+                  onChangeText={(val) => handleWebDateChange('entrada', val)}
                   error={errors.fechaEntrada}
                   required
                 />
@@ -209,7 +281,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
                   label="Fecha de salida"
                   placeholder="2026-04-05"
                   value={fechaSalidaWeb}
-                  onChangeText={setFechaSalidaWeb}
+                  onChangeText={(val) => handleWebDateChange('salida', val)}
                   error={errors.fechaSalida}
                   required
                 />
@@ -263,28 +335,55 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
             )}
           </View>
 
-          {((isWeb && fechaEntradaWeb && fechaSalidaWeb) || (!isWeb && fechaEntrada && fechaSalida)) && calculateNights() > 0 && (
+          {datesSelected && calculateNights() > 0 && (
             <>
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Seleccionar habitación</Text>
-                {errors.habitacion && (
-                  <Text style={styles.errorText}>{errors.habitacion}</Text>
+                <Text style={styles.sectionTitle}>Buscar habitaciones</Text>
+                {!roomsSearched ? (
+                  <Button
+                    title={loadingRooms ? 'Buscando habitaciones...' : 'Buscar habitaciones disponibles'}
+                    onPress={loadAvailableRooms}
+                    isLoading={loadingRooms}
+                    fullWidth
+                  />
+                ) : (
+                  <Button
+                    title="Buscar de nuevo"
+                    onPress={loadAvailableRooms}
+                    isLoading={loadingRooms}
+                    fullWidth
+                    variant="secondary"
+                  />
                 )}
-                <View style={styles.roomSelector}>
-                  {habitaciones.map((room) => (
-                    <Pressable
-                      key={room.id}
-                      onPress={() => setSelectedHabitacionId(room.id)}
-                      style={[
-                        styles.roomOption,
-                        selectedHabitacionId === room.id && styles.roomOptionSelected,
-                      ]}
-                    >
-                      <Text style={styles.roomOptionText}>{room.name}</Text>
-                    </Pressable>
-                  ))}
-                </View>
               </View>
+
+              {roomsSearched && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Seleccionar habitación</Text>
+                  {errors.habitacion && (
+                    <Text style={styles.errorText}>{errors.habitacion}</Text>
+                  )}
+                  <View style={styles.roomSelector}>
+                    {rooms.length === 0 ? (
+                      <Text style={styles.errorText}>No hay habitaciones disponibles para estas fechas</Text>
+                    ) : (
+                      rooms.map((room) => (
+                        <Pressable
+                          key={room.id}
+                          onPress={() => setSelectedHabitacionId(room.id)}
+                          style={[
+                            styles.roomOption,
+                            selectedHabitacionId === room.id && styles.roomOptionSelected,
+                          ]}
+                          disabled={loadingRooms}
+                        >
+                          <Text style={styles.roomOptionText}>{room.name}</Text>
+                        </Pressable>
+                      ))
+                    )}
+                  </View>
+                </View>
+              )}
 
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Tipo de reserva</Text>
@@ -341,7 +440,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Habitación</Text>
                     <Text style={styles.summaryValue}>
-                      {habitaciones.find(h => h.id === selectedHabitacionId)?.name}
+                      {rooms.find(h => h.id === selectedHabitacionId)?.name}
                     </Text>
                   </View>
                 )}
@@ -363,10 +462,11 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
 
           <View style={styles.actions}>
             <Button
-              title="Crear reserva"
+              title={isSubmitting ? 'Creando...' : 'Crear reserva'}
               onPress={handleSubmit}
               fullWidth
               size="lg"
+              disabled={isSubmitting}
             />
             <Button
               title="Cancelar"
@@ -374,6 +474,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
               variant="secondary"
               fullWidth
               size="lg"
+              disabled={isSubmitting}
             />
           </View>
         </ScrollView>
@@ -381,3 +482,4 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
     </KeyboardAvoidingView>
   );
 };
+

@@ -14,7 +14,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { styles } from './ProfileScreen.styles';
 
 export const ProfileScreen: React.FC<ScreenProps> = ({ navigation }) => {
-  const { user, setUser } = useAuth();
+  const { user, logout } = useAuth();
 
   if (!user) {
     return (
@@ -31,9 +31,8 @@ export const ProfileScreen: React.FC<ScreenProps> = ({ navigation }) => {
       { text: 'Cancelar', onPress: () => {} },
       {
         text: 'Cerrar sesión',
-        onPress: () => {
-          setUser(null);
-          navigation.getParent()?.getParent()?.replace('Auth');
+        onPress: async () => {
+          await logout();
         },
         style: 'destructive',
       },
