@@ -1,6 +1,6 @@
 // Script that seeds the database with initial room data and notification templates.
 import 'dotenv/config';
-import { PrismaNeonHttp } from '@prisma/adapter-neon';
+import { PrismaNeon } from '@prisma/adapter-neon';
 import { PrismaClient, TipoNotificacion } from '../generated/prisma/client';
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -9,8 +9,10 @@ if (!databaseUrl) {
   throw new Error('DATABASE_URL is required to run the Prisma seed script.');
 }
 
+const adapter = new PrismaNeon({ connectionString: databaseUrl });
+
 const prisma = new PrismaClient({
-  adapter: new PrismaNeonHttp(databaseUrl, {}),
+  adapter,
 } as ConstructorParameters<typeof PrismaClient>[0]);
 
 const standardRooms = Array.from({ length: 10 }, (_, index) => ({
