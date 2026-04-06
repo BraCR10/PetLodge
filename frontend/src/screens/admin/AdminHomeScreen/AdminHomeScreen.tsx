@@ -15,7 +15,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { styles } from './AdminHomeScreen.styles';
 
 export const AdminHomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
-  const { setUser } = useAuth();
+  const { logout } = useAuth();
 
   const modules = [
     {
@@ -64,9 +64,8 @@ export const AdminHomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
         { text: 'Cancelar', onPress: () => {} },
         {
           text: 'Cerrar sesión',
-          onPress: () => {
-            setUser(null);
-            navigation.getParent()?.getParent()?.replace('Auth');
+          onPress: async () => {
+            await logout();
           },
           style: 'destructive',
         },

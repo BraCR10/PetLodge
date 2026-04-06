@@ -1,52 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   SafeAreaView,
   FlatList,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
-import { Spacing } from '@/src/utils/theme';
+import { Spacing, Colors } from '@/src/utils/theme';
 import { Mascota, ScreenProps } from '@/src/types';
+import { petsService } from '@/src/services/api/pets.service';
 import { styles } from './PetsScreen.styles';
 
-const initialPets: Mascota[] = [
-  {
-    id: "1",
-    nombre: 'Max',
-    tipo: 'perro',
-    raza: 'Golden Retriever',
-    anos: 3,
-    meses: 6,
-    sexo: 'macho',
-    tamaño: 'grande',
-    estadoVacunacion: 'vacunado',
-    condicionesMedicas: 'Ninguna',
-    numeroVeterinario: '+506 2234-5678',
-    cuidadosEspeciales: 'Requiere baño mensual y cepillado frecuente',
-    foto: '',
-  },
-  {
-    id: "2",
-    nombre: 'Luna',
-    tipo: 'gato',
-    raza: 'Persa',
-    anos: 2,
-    meses: 3,
-    sexo: 'hembra',
-    tamaño: 'pequeño',
-    estadoVacunacion: 'vacunado',
-    condicionesMedicas: 'Alergia a ciertos alimentos',
-    numeroVeterinario: '+506 2234-5678',
-    cuidadosEspeciales: 'Debe estar en interiores',
-    foto: '',
-  },
-];
-
 export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
-  const [pets, setPets] = useState(initialPets);
+  const [pets, setPets] = useState<Mascota[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadPets = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await petsService.getPets();
+      setPets(
+        data.map((pet) => ({
+          ...pet,
+          foto: pet.foto || '',
+        }))
+      );
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar mascotas';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPets();
+  }, []);
+
+  // Refresh when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      loadPets();
+    }, [])
+  );
 
   const handleDeletePet = (petId: string, petName: string) => {
     Alert.alert(
@@ -56,8 +58,15 @@ export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
         { text: 'Cancelar', onPress: () => {} },
         {
           text: 'Eliminar',
-          onPress: () => {
-            setPets((prev) => prev.filter((pet) => pet.id !== petId));
+          onPress: async () => {
+            try {
+              await petsService.deletePet(petId);
+              setPets((prev) => prev.filter((pet) => pet.id !== petId));
+              Alert.alert('Éxito', 'Mascota eliminada correctamente');
+            } catch (err: any) {
+              const errorMessage = err?.response?.data?.message || err?.message || 'Error al eliminar mascota';
+              Alert.alert('Error', errorMessage);
+            }
           },
           style: 'destructive',
         },
@@ -80,6 +89,31 @@ export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
     }
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={[styles.content, { justifyContent: 'center', alignItems: 'center', flex: 1 }]}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={[styles.content, { justifyContent: 'center', alignItems: 'center', flex: 1 }]}>
+          <Text style={styles.emptyText}>{error}</Text>
+          <Button
+            title="Reintentar"
+            onPress={loadPets}
+            style={{ marginTop: Spacing.lg }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
@@ -89,7 +123,7 @@ export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
               <Text style={styles.title}>Mis mascotas</Text>
               <Button
                 title="Añadir mascota"
-                onPress={() => navigation.navigate('NewPet')}
+                onPress={() => navigation.navigate('EditPet')}
                 size="sm"
                 style={styles.addButton}
               />
@@ -136,7 +170,7 @@ export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
             <Text style={styles.emptyText}>Aún no has añadido mascotas</Text>
             <Button
               title="Añade tu primera mascota"
-              onPress={() => navigation.navigate('NewPet')}
+              onPress={() => navigation.navigate('EditPet')}
             />
           </View>
         }

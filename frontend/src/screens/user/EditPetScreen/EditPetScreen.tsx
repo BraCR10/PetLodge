@@ -9,6 +9,7 @@ import {
   Platform,
   Pressable,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Button } from '@/src/components/ui/Button';
@@ -16,6 +17,7 @@ import { Input } from '@/src/components/ui/Input';
 import { Card } from '@/src/components/ui/Card';
 import { Spacing, Colors } from '@/src/utils/theme';
 import { Mascota, SexoMascota, TamañoMascota, ScreenPropsWithRoute } from '@/src/types';
+import { petsService } from '@/src/services/api/pets.service';
 import { styles } from './EditPetScreen.styles';
 
 export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, route }) => {
@@ -29,8 +31,8 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
   const [meses, setMeses] = useState('');
   
   // Physical characteristics
-  const [sexo, setSexo] = useState<SexoMascota>('macho');
-  const [tamaño, setTamaño] = useState<TamañoMascota>('mediano');
+  const [sexo, setSexo] = useState<SexoMascota>('MACHO');
+  const [tamaño, setTamaño] = useState<TamañoMascota>('MEDIANO');
   
   // Medical information
   const [estadoVacunacion, setEstadoVacunacion] = useState('');
@@ -39,66 +41,119 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
   
   // Care information
   const [cuidadosEspeciales, setCuidadosEspeciales] = useState('');
-  const [foto, setFoto] = useState('');
+  const [foto, setFoto] = useState<any>(null);
+  const [fotoUri, setFotoUri] = useState('');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = Boolean(mascota);
 
   useEffect(() => {
     if (mascota) {
       setNombre(mascota.nombre);
-      setTipo(mascota.tipo);
+      setTipo(mascota.tipo.toUpperCase());
       setRaza(mascota.raza);
       setAnos(String(mascota.anos));
       setMeses(String(mascota.meses));
-      setSexo(mascota.sexo);
-      setTamaño(mascota.tamaño);
+      setSexo(mascota.sexo.toUpperCase() as SexoMascota);
+      setTamaño(mascota.tamaño.toUpperCase() as TamañoMascota);
       setEstadoVacunacion(mascota.estadoVacunacion);
       setCondicionesMedicas(mascota.condicionesMedicas);
       setNumeroVeterinario(mascota.numeroVeterinario);
       setCuidadosEspeciales(mascota.cuidadosEspeciales);
-      if (mascota.foto) setFoto(mascota.foto);
+      if (mascota.foto) {
+        setFotoUri(mascota.foto);
+      }
     }
   }, [mascota]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!nombre) newErrors.nombre = 'El nombre es requerido';
+    if (!nombre.trim()) newErrors.nombre = 'El nombre es requerido';
     if (!tipo) newErrors.tipo = 'El tipo es requerido';
-    if (!raza) newErrors.raza = 'La raza es requerida';
+    if (!raza.trim()) newErrors.raza = 'La raza es requerida';
     if (!anos) newErrors.anos = 'Los años son requeridos';
     else if (isNaN(Number(anos)) || Number(anos) < 0) newErrors.anos = 'Los años deben ser un número válido';
     if (!meses) newErrors.meses = 'Los meses son requeridos';
     else if (isNaN(Number(meses)) || Number(meses) < 0 || Number(meses) > 11) newErrors.meses = 'Los meses deben ser entre 0 y 11';
     
-    if (!foto) newErrors.foto = 'La foto de la mascota es requerida';
-    if (!estadoVacunacion) newErrors.estadoVacunacion = 'El estado de vacunación es requerido';
-    if (!condicionesMedicas) newErrors.condicionesMedicas = 'Las condiciones médicas son requeridas';
-    if (!numeroVeterinario) newErrors.numeroVeterinario = 'El número del veterinario es requerido';
-    if (!cuidadosEspeciales) newErrors.cuidadosEspeciales = 'Los cuidados especiales son requeridos';
+    if (!estadoVacunacion.trim()) newErrors.estadoVacunacion = 'El estado de vacunación es requerido';
+    if (!condicionesMedicas.trim()) newErrors.condicionesMedicas = 'Las condiciones médicas son requeridas';
+    if (!numeroVeterinario.trim()) newErrors.numeroVeterinario = 'El número del veterinario es requerido';
+    if (!cuidadosEspeciales.trim()) newErrors.cuidadosEspeciales = 'Los cuidados especiales son requeridos';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
 
-    Alert.alert('Guardado', 'La información de la mascota se guardó localmente.', [
-      { text: 'Aceptar', onPress: () => navigation.goBack() },
-    ]);
+    try {
+      setIsSubmitting(true);
+
+      if (isEditMode) {
+        // Update existing pet
+        await petsService.updatePet(mascota.id, {
+          nombre: nombre.trim(),
+          tipo,
+          raza: raza.trim(),
+          anos: Number(anos),
+          meses: Number(meses),
+          sexo,
+          tamano: tamaño,
+          estadoVacunacion: estadoVacunacion.trim(),
+          condicionesMedicas: condicionesMedicas.trim(),
+          numeroVeterinario: numeroVeterinario.trim(),
+          cuidadosEspeciales: cuidadosEspeciales.trim(),
+          foto: foto || undefined,
+        });
+      } else {
+        // Create new pet
+        await petsService.createPet({
+          nombre: nombre.trim(),
+          tipo,
+          raza: raza.trim(),
+          anos: Number(anos),
+          meses: Number(meses),
+          sexo,
+          tamano: tamaño,
+          estadoVacunacion: estadoVacunacion.trim(),
+          condicionesMedicas: condicionesMedicas.trim(),
+          numeroVeterinario: numeroVeterinario.trim(),
+          cuidadosEspeciales: cuidadosEspeciales.trim(),
+          foto,
+        });
+      }
+
+      navigation.navigate('Pets');
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || err?.message || 
+        (isEditMode ? 'Error al actualizar mascota' : 'Error al crear mascota');
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  const tipoOptions = [
+    { tipo: 'PERRO', label: 'Perro' },
+    { tipo: 'GATO', label: 'Gato' },
+    { tipo: 'CONEJO', label: 'Conejo' },
+    { tipo: 'PAJARO', label: 'Pájaro' },
+    { tipo: 'OTRO', label: 'Otro' },
+  ];
+
   const sexoOptions = [
-    { sexo: 'macho' as SexoMascota, label: 'Macho' },
-    { sexo: 'hembra' as SexoMascota, label: 'Hembra' },
+    { sexo: 'MACHO' as SexoMascota, label: 'Macho' },
+    { sexo: 'HEMBRA' as SexoMascota, label: 'Hembra' },
   ];
 
   const tamañoOptions = [
-    { tamaño: 'pequeño' as TamañoMascota, label: 'Pequeño' },
-    { tamaño: 'mediano' as TamañoMascota, label: 'Mediano' },
-    { tamaño: 'grande' as TamañoMascota, label: 'Grande' },
+    { tamaño: 'PEQUENO' as TamañoMascota, label: 'Pequeño' },
+    { tamaño: 'MEDIANO' as TamañoMascota, label: 'Mediano' },
+    { tamaño: 'GRANDE' as TamañoMascota, label: 'Grande' },
   ];
 
   const pickImage = async () => {
@@ -111,7 +166,23 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
       });
 
       if (!result.canceled) {
-        setFoto(result.assets[0].uri);
+        setFotoUri(result.assets[0].uri);
+        // For web and native, we need to handle the file differently
+        if (Platform.OS === 'web') {
+          fetch(result.assets[0].uri)
+            .then((res) => res.blob())
+            .then((blob) => {
+              const file = new File([blob], 'pet-photo.jpg', { type: 'image/jpeg' });
+              setFoto(file);
+            });
+        } else {
+          // For native, use the uri directly
+          setFoto({
+            uri: result.assets[0].uri,
+            type: 'image/jpeg',
+            name: 'pet-photo.jpg',
+          });
+        }
       }
     } catch (error) {
       Alert.alert('Error', 'No se pudo seleccionar la imagen');
@@ -142,14 +213,26 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
               required
             />
 
-            <Input
-              label="Tipo de mascota"
-              placeholder="p. ej., perro, gato, conejo, pajaro, otro"
-              value={tipo}
-              onChangeText={setTipo}
-              error={errors.tipo}
-              required
-            />
+            <View style={styles.typeContainer}>
+              <Text style={styles.label}>Tipo de mascota</Text>
+              <Card padding={Spacing.md} margin={0}>
+                <View style={styles.tipoGrid}>
+                  {tipoOptions.map((option) => (
+                    <Pressable
+                      key={option.tipo}
+                      onPress={() => setTipo(option.tipo)}
+                      style={[
+                        styles.optionButton,
+                        tipo === option.tipo && styles.optionButtonSelected,
+                      ]}
+                    >
+                      <Text style={styles.optionText}>{option.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </Card>
+              {errors.tipo && <Text style={styles.errorText}>{errors.tipo}</Text>}
+            </View>
 
             <Input
               label="Raza"
@@ -286,9 +369,9 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
                 {errors.foto && <Text style={styles.errorText}>{errors.foto}</Text>}
               </View>
               <View style={styles.photoPreviewContainer}>
-                {foto ? (
+                {fotoUri ? (
                   <Image
-                    source={{ uri: foto }}
+                    source={{ uri: fotoUri }}
                     style={styles.photoPreview}
                   />
                 ) : (
@@ -302,10 +385,11 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
 
           <View style={styles.actions}>
             <Button
-              title={isEditMode ? 'Actualizar mascota' : 'Añadir mascota'}
+              title={isSubmitting ? 'Guardando...' : (isEditMode ? 'Actualizar mascota' : 'Añadir mascota')}
               onPress={handleSave}
               fullWidth
               size="lg"
+              disabled={isSubmitting}
             />
             <Button
               title="Cancelar"
@@ -313,6 +397,7 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
               variant="secondary"
               fullWidth
               size="lg"
+              disabled={isSubmitting}
             />
           </View>
         </ScrollView>
