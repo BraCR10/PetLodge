@@ -15,8 +15,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { styles } from './HomeScreen.styles';
 
 export const HomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
-  const { logout } = useAuth();
-  const user = { name: 'Guest User' };
+  const { user, logout } = useAuth();
 
   const quickActions = [
     {
@@ -60,7 +59,7 @@ export const HomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.greeting}>🐾</Text>
-          <Text style={styles.welcomeText}>¡Hola, {user?.name}!</Text>
+          <Text style={styles.welcomeText}>¡Hola, {user?.nombre}!</Text>
           <Text style={styles.date}>
             {new Date().toLocaleDateString('es-ES', {
               weekday: 'long',

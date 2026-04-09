@@ -54,7 +54,6 @@ export const LoginScreen: React.FC<ScreenProps> = ({ navigation }) => {
       await login({ email, password });
       // Navigation will happen automatically when user is set in context
     } catch (error: any) {
-      console.log('Login error:', error);
       const errorMessage = error?.message || error?.error || 'Error al iniciar sesión';
       setGeneralError(errorMessage);
     }

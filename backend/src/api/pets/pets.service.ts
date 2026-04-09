@@ -126,7 +126,7 @@ export class PetsService {
     const { tamano, anos, userId: _userId, foto, ...rest } = pet;
 
     const rawFoto =
-      foto ?? `${this.config.getOrThrow<string>('AVATAR_API')}${encodeURIComponent(rest.nombre)}`;
+      foto || `${this.config.getOrThrow<string>('AVATAR_API')}${encodeURIComponent(rest.nombre)}`;
 
     // S3 URLs are pre-signed so the mobile client can access private bucket objects.
     // DiceBear fallback URLs are public and returned unchanged.

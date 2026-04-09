@@ -53,7 +53,7 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
       setNombre(mascota.nombre);
       setTipo(mascota.tipo.toUpperCase());
       setRaza(mascota.raza);
-      setAnos(String(mascota.anos));
+      setAnos(String(mascota.años));
       setMeses(String(mascota.meses));
       setSexo(mascota.sexo.toUpperCase() as SexoMascota);
       setTamaño(mascota.tamaño.toUpperCase() as TamañoMascota);
@@ -158,36 +158,31 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
 
   const pickImage = async () => {
     try {
+      // Request permissions first
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('Permiso denegado', 'Se necesita acceso a la galería para seleccionar imágenes');
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
       });
 
       if (!result.canceled) {
-        setFotoUri(result.assets[0].uri);
-        // For web and native, we need to handle the file differently
-        if (Platform.OS === 'web') {
-          fetch(result.assets[0].uri)
-            .then((res) => res.blob())
-            .then((blob) => {
-              const file = new File([blob], 'pet-photo.jpg', { type: 'image/jpeg' });
-              setFoto(file);
-            });
-        } else {
-          // For native, use the uri directly
-          setFoto({
-            uri: result.assets[0].uri,
-            type: 'image/jpeg',
-            name: 'pet-photo.jpg',
-          });
-        }
+        const uri = result.assets[0].uri;
+        setFotoUri(uri);
+        setFoto({ uri, isPicker: true });
       }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo seleccionar la imagen');
+      Alert.alert('Error', `${error instanceof Error ? error.message : 'No se pudo seleccionar la imagen'}`);
     }
   };
+
 
   return (
     <KeyboardAvoidingView

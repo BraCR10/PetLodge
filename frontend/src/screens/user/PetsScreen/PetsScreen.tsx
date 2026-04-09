@@ -6,6 +6,7 @@ import {
   FlatList,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Button } from '@/src/components/ui/Button';
@@ -19,6 +20,25 @@ export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [pets, setPets] = useState<Mascota[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const isSupabaseUrl = (url: string) => {
+    return url.includes('supabase.co') || url.includes('.storage');
+  };
+
+  const getInitials = (nombre: string) => {
+    return nombre
+      .split(' ')
+      .map((word) => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const getBackgroundColor = (nombre: string) => {
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'];
+    const index = nombre.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
 
   const loadPets = async () => {
     try {
@@ -74,21 +94,6 @@ export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
     );
   };
 
-  const getPetIcon = (tipo: string) => {
-    switch (tipo) {
-      case 'perro':
-        return '🐕';
-      case 'gato':
-        return '🐈';
-      case 'conejo':
-        return '🐰';
-      case 'pajaro':
-        return '🐦';
-      default:
-        return '🐾';
-    }
-  };
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -135,11 +140,31 @@ export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
           <View style={[styles.content, styles.contentNoVerticalPadding]}>
             <Card padding={Spacing.md} margin={0}>
               <View style={styles.petContent}>
-                <Text style={styles.petIcon}>{getPetIcon(item.tipo)}</Text>
+                {item.foto && isSupabaseUrl(item.foto) ? (
+                  <Image
+                    source={{ uri: item.foto }}
+                    style={styles.petImage}
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.petImage,
+                      {
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: getBackgroundColor(item.nombre),
+                      },
+                    ]}
+                  >
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#fff' }}>
+                      {getInitials(item.nombre)}
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.petInfo}>
                   <Text style={styles.petName}>{item.nombre}</Text>
                   <Text style={styles.petDetails}>
-                    {item.raza} • {item.anos} años y {item.meses} meses
+                    {item.raza} • {item.años} años y {item.meses} meses
                   </Text>
                 </View>
               </View>
