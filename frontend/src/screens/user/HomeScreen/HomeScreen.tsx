@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,10 +12,34 @@ import { Card } from '@/src/components/ui/Card';
 import { Spacing } from '@/src/utils/theme';
 import { ScreenProps } from '@/src/types';
 import { useAuth } from '@/src/context/AuthContext';
+import { petsService } from '@/src/services/api/pets.service';
+import { reservationsService } from '@/src/services/api/reservations.service';
 import { styles } from './HomeScreen.styles';
 
 export const HomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const { user, logout } = useAuth();
+  const [petsCount, setPetsCount] = useState(0);
+  const [reservationsCount, setReservationsCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const [pets, reservations] = await Promise.all([
+          petsService.getPets(),
+          reservationsService.getReservations(),
+        ]);
+        setPetsCount(pets.length);
+        setReservationsCount(reservations.length);
+      } catch (error) {
+        console.error('Error fetching counts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCounts();
+  }, []);
 
   const quickActions = [
     {
@@ -92,13 +116,13 @@ export const HomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
           <View style={styles.statsContainer}>
             <Card padding={Spacing.md}>
               <View style={styles.statCard}>
-                <Text style={styles.statNumber}>5</Text>
+                <Text style={styles.statNumber}>{petsCount}</Text>
                 <Text style={styles.statLabel}>Mascotas</Text>
               </View>
             </Card>
             <Card padding={Spacing.md}>
               <View style={styles.statCard}>
-                <Text style={styles.statNumber}>2</Text>
+                <Text style={styles.statNumber}>{reservationsCount}</Text>
                 <Text style={styles.statLabel}>Reservas</Text>
               </View>
             </Card>
