@@ -1,14 +1,15 @@
 import { apiClient } from './client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface PetResponse {
   id: string;
   nombre: string;
   tipo: string;
   raza: string;
-  anos: number;
+  años: number;
   meses: number;
   sexo: string;
-  tamano: string;
+  tamaño: string;
   estadoVacunacion: string;
   condicionesMedicas: string;
   numeroVeterinario: string;
@@ -71,15 +72,11 @@ export const petsService = {
     }
   },
 
-  /**
-   * Create a new pet with optional photo
-   * Photo should be uploaded as multipart/form-data
-   */
   async createPet(data: CreatePetRequest): Promise<PetResponse> {
     try {
+      console.log('🐾 Creating pet with data:', data);
       const formData = new FormData();
       
-      // Add all fields to formData
       formData.append('nombre', data.nombre);
       formData.append('tipo', data.tipo);
       formData.append('raza', data.raza);
@@ -92,30 +89,49 @@ export const petsService = {
       formData.append('numeroVeterinario', data.numeroVeterinario);
       formData.append('cuidadosEspeciales', data.cuidadosEspeciales);
       
-      // Add photo if provided
-      if (data.foto) {
-        formData.append('foto', data.foto);
+      if (data.foto?.isPicker && data.foto?.uri) {
+        console.log('📷 Adding photo:', data.foto.uri);
+        formData.append('foto', {
+          uri: data.foto.uri,
+          type: 'image/jpeg',
+          name: 'pet-photo.jpg',
+        } as any);
       }
 
-      const response = await apiClient.post<PetResponse>('/pets', formData, {
+      const token = await AsyncStorage.getItem('auth_token');
+      const url = `${process.env.EXPO_PUBLIC_API_BASE_URL}/pets`;
+      console.log('📤 Sending POST to:', url);
+      
+      const response = await fetch(url, {
+        method: 'POST',
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`,
         },
+        body: formData,
       });
-      return response.data;
+
+      console.log('📡 Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Error response:', errorData);
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Pet created:', result);
+      return result;
     } catch (error) {
+      console.error('❌ Error creating pet:', error);
       throw error;
     }
   },
 
-  /**
-   * Update a pet with optional photo replacement
-   */
   async updatePet(id: string, data: UpdatePetRequest): Promise<PetResponse> {
     try {
+      console.log('🐾 Updating pet', id, 'with data:', data);
       const formData = new FormData();
       
-      // Add only provided fields to formData
       if (data.nombre !== undefined) formData.append('nombre', data.nombre);
       if (data.tipo !== undefined) formData.append('tipo', data.tipo);
       if (data.raza !== undefined) formData.append('raza', data.raza);
@@ -128,18 +144,42 @@ export const petsService = {
       if (data.numeroVeterinario !== undefined) formData.append('numeroVeterinario', data.numeroVeterinario);
       if (data.cuidadosEspeciales !== undefined) formData.append('cuidadosEspeciales', data.cuidadosEspeciales);
       
-      // Add photo if provided
-      if (data.foto) {
-        formData.append('foto', data.foto);
+      if (data.foto?.isPicker && data.foto?.uri) {
+        console.log('📷 Adding photo:', data.foto.uri);
+        formData.append('foto', {
+          uri: data.foto.uri,
+          type: 'image/jpeg',
+          name: 'pet-photo.jpg',
+        } as any);
+      } else if (data.foto) {
+        formData.append('foto', data.foto, 'pet-photo.jpg');
       }
 
-      const response = await apiClient.patch<PetResponse>(`/pets/${id}`, formData, {
+      const token = await AsyncStorage.getItem('auth_token');
+      const url = `${process.env.EXPO_PUBLIC_API_BASE_URL}/pets/${id}`;
+      console.log('📤 Sending PATCH to:', url);
+      
+      const response = await fetch(url, {
+        method: 'PATCH',
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`,
         },
+        body: formData,
       });
-      return response.data;
+
+      console.log('📡 Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Error response:', errorData);
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Pet updated:', result);
+      return result;
     } catch (error) {
+      console.error('❌ Error updating pet:', error);
       throw error;
     }
   },

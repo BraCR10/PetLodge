@@ -39,7 +39,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // If token is invalid/expired → SessionGuard returns 401 → catch block
             // If token is valid → Returns fresh user data
             const response = await apiClient.get('/users/me');
-            console.log('Token valid, user data:', response.data);
             setUser({
               id: response.data.id,
               nombre: response.data.nombre,
@@ -52,13 +51,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
           } catch (error) {
             // Token is invalid or expired
-            console.error('Token validation failed:', error);
             await AsyncStorage.removeItem('auth_token');
             setUser(null);
           }
         }
       } catch (error) {
-        console.error('Failed to initialize auth:', error);
+        // Error initializing auth
       } finally {
         setIsInitialized(true);
       }
@@ -131,7 +129,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await AsyncStorage.removeItem('auth_token');
       setUser(null);
     } catch (error) {
-      console.error('Failed to logout:', error);
+      // Logout error
     }
   };
 

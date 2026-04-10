@@ -43,7 +43,7 @@ export const styles = StyleSheet.create({
   petContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: Spacing.md,
   },
   petInfo: {
@@ -62,6 +62,13 @@ export const styles = StyleSheet.create({
   petIcon: {
     fontSize: 40,
     marginRight: Spacing.md,
+  },
+  petImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    marginRight: Spacing.md,
+    backgroundColor: Colors.border,
   },
   petActions: {
     flexDirection: 'row',
