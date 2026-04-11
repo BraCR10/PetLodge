@@ -9,8 +9,8 @@ export class ReservationsScheduler {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  // Runs every day at midnight UTC
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  // Runs every day at midnight UTC-6 (America/Costa_Rica)
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT, { timeZone: 'America/Costa_Rica' })
   async syncReservationStatuses(): Promise<void> {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
