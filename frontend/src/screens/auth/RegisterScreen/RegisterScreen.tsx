@@ -12,6 +12,7 @@ import { Input } from '@/src/components/ui/Input';
 import { ScreenProps } from '@/src/types';
 import { useAuth } from '@/src/context/AuthContext';
 import { Colors, Spacing } from '@/src/utils/theme';
+import { getFriendlyErrorMessage } from '@/src/utils/errors';
 import { styles } from './RegisterScreen.styles';
 
 export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
@@ -45,10 +46,22 @@ export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
     if (!nombre) {
       setNombreError('El nombre completo es requerido');
       isValid = false;
+    } else if (nombre.trim().length < 2) {
+      setNombreError('El nombre debe tener al menos 2 caracteres');
+      isValid = false;
+    } else if (nombre.trim().length > 100) {
+      setNombreError('El nombre no puede exceder 100 caracteres');
+      isValid = false;
     }
 
     if (!numeroIdentificacion) {
       setNumeroIdentificacionError('El número de identificación es requerido');
+      isValid = false;
+    } else if (numeroIdentificacion.trim().length < 5) {
+      setNumeroIdentificacionError('La identificación debe tener al menos 5 caracteres');
+      isValid = false;
+    } else if (numeroIdentificacion.trim().length > 20) {
+      setNumeroIdentificacionError('La identificación no puede exceder 20 caracteres');
       isValid = false;
     }
 
@@ -62,6 +75,9 @@ export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
 
     if (!numeroTelefono) {
       setNumeroTelefonoError('El número de teléfono es requerido');
+      isValid = false;
+    } else if (!/^\+?[\d\s\-()]{7,20}$/.test(numeroTelefono)) {
+      setNumeroTelefonoError('El número de teléfono no es válido');
       isValid = false;
     }
 
@@ -96,8 +112,12 @@ export const RegisterScreen: React.FC<ScreenProps> = ({ navigation }) => {
       });
       // Navigation will happen automatically when user is set in context
     } catch (error: any) {
-      const errorMessage = error?.message || error?.error || 'Error al registrarse';
-      setGeneralError(errorMessage);
+      const code = error?.response?.data?.code;
+      if (code === 'USER_ALREADY_EXISTS') {
+        setGeneralError(error.response.data.message);
+      } else {
+        setGeneralError(getFriendlyErrorMessage(error, 'Error al registrarse'));
+      }
     }
   };
 

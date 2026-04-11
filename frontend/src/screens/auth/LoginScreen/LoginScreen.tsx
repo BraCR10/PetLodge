@@ -13,6 +13,7 @@ import { Input } from '@/src/components/ui/Input';
 import { ScreenProps } from '@/src/types';
 import { useAuth } from '@/src/context/AuthContext';
 import { Colors, Spacing } from '@/src/utils/theme';
+import { getFriendlyErrorMessage } from '@/src/utils/errors';
 import { styles } from './LoginScreen.styles';
 
 export const LoginScreen: React.FC<ScreenProps> = ({ navigation }) => {
@@ -54,8 +55,7 @@ export const LoginScreen: React.FC<ScreenProps> = ({ navigation }) => {
       await login({ email, password });
       // Navigation will happen automatically when user is set in context
     } catch (error: any) {
-      const errorMessage = error?.message || error?.error || 'Error al iniciar sesión';
-      setGeneralError(errorMessage);
+      setGeneralError(getFriendlyErrorMessage(error, 'Error al iniciar sesión'));
     }
   };
 

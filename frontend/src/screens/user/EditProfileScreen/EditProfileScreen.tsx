@@ -46,11 +46,21 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!nombre) newErrors.nombre = 'El nombre completo es requerido';
+    if (!nombre) {
+      newErrors.nombre = 'El nombre completo es requerido';
+    } else if (nombre.trim().length < 2) {
+      newErrors.nombre = 'El nombre debe tener al menos 2 caracteres';
+    } else if (nombre.trim().length > 100) {
+      newErrors.nombre = 'El nombre no puede exceder 100 caracteres';
+    }
 
-    if (!numeroIdentificacion)
-      newErrors.numeroIdentificacion =
-        'El número de identificación es requerido';
+    if (!numeroIdentificacion) {
+      newErrors.numeroIdentificacion = 'El número de identificación es requerido';
+    } else if (numeroIdentificacion.trim().length < 5) {
+      newErrors.numeroIdentificacion = 'La identificación debe tener al menos 5 caracteres';
+    } else if (numeroIdentificacion.trim().length > 20) {
+      newErrors.numeroIdentificacion = 'La identificación no puede exceder 20 caracteres';
+    }
 
     if (!email) {
       newErrors.email = 'El correo es requerido';
@@ -58,8 +68,11 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
       newErrors.email = 'El correo no es válido';
     }
 
-    if (!numeroTelefono)
+    if (!numeroTelefono) {
       newErrors.numeroTelefono = 'El número de teléfono es requerido';
+    } else if (!/^\+?[\d\s\-()]{7,20}$/.test(numeroTelefono)) {
+      newErrors.numeroTelefono = 'El número de teléfono no es válido';
+    }
 
     if (!direccion) newErrors.direccion = 'La dirección es requerida';
 
@@ -96,11 +109,20 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
         navigation.goBack();
       }, 800);
     } catch (error: any) {
-      const errorMessage = getFriendlyErrorMessage(
-        error,
-        'Hubo un error actualizando el perfil, vuelva a intentar',
-      );
-      showToast(errorMessage, 'error');
+      const code = error?.response?.data?.code;
+
+      if (code === 'USER_EMAIL_EXISTS') {
+        setErrors((prev) => ({ ...prev, email: error.response.data.message }));
+      } else if (code === 'USER_ID_EXISTS') {
+        setErrors((prev) => ({ ...prev, numeroIdentificacion: error.response.data.message }));
+      } else {
+        const errorMessage = getFriendlyErrorMessage(
+          error,
+          'Hubo un error actualizando el perfil, vuelva a intentar',
+        );
+        showToast(errorMessage, 'error');
+      }
+
       setIsLoading(false);
     }
   };

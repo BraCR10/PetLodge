@@ -245,8 +245,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
         navigation.goBack();
       }, 800);
     } catch (err: any) {
-      const errorMessage = getFriendlyErrorMessage(err, 'Hubo un error creando la reserva, vuelva a intentar');
-      showToast(errorMessage, 'error');
+      showToast(getFriendlyErrorMessage(err, 'Hubo un error creando la reserva, vuelva a intentar'), 'error');
       setIsSubmitting(false);
     }
   };

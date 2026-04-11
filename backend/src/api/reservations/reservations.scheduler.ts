@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { ReservationStatus } from '../../../generated/prisma/client';
+import { Prisma, ReservationStatus } from '../../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
@@ -15,21 +15,23 @@ export class ReservationsScheduler {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
-    await Promise.all([this.transitionToInProgress(today), this.transitionToCompleted(today)]);
+    await this.transitionToInProgress(today);
+    await this.transitionToCompleted(today);
   }
 
   /**
    * CONFIRMADA -> EN_PROGRESO when fechaEntrada <= today and fechaSalida > today
    */
   private async transitionToInProgress(today: Date): Promise<void> {
-    const { count } = await this.prisma.reservation.updateMany({
-      where: {
-        estado: ReservationStatus.CONFIRMADA,
-        fechaEntrada: { lte: today },
-        fechaSalida: { gt: today },
-      },
-      data: { estado: ReservationStatus.EN_PROGRESO },
-    });
+    const count = await this.prisma.$executeRaw(
+      Prisma.sql`
+        UPDATE "Reservation"
+        SET "estado" = ${ReservationStatus.EN_PROGRESO}
+        WHERE "estado" = ${ReservationStatus.CONFIRMADA}
+          AND "fechaEntrada" <= ${today}
+          AND "fechaSalida" > ${today}
+      `,
+    );
 
     if (count > 0) {
       this.logger.log(`Transitioned ${count} reservation(s) CONFIRMADA -> EN_PROGRESO`);
@@ -40,13 +42,14 @@ export class ReservationsScheduler {
    * EN_PROGRESO -> COMPLETADA when fechaSalida <= today
    */
   private async transitionToCompleted(today: Date): Promise<void> {
-    const { count } = await this.prisma.reservation.updateMany({
-      where: {
-        estado: ReservationStatus.EN_PROGRESO,
-        fechaSalida: { lte: today },
-      },
-      data: { estado: ReservationStatus.COMPLETADA },
-    });
+    const count = await this.prisma.$executeRaw(
+      Prisma.sql`
+        UPDATE "Reservation"
+        SET "estado" = ${ReservationStatus.COMPLETADA}
+        WHERE "estado" = ${ReservationStatus.EN_PROGRESO}
+          AND "fechaSalida" <= ${today}
+      `,
+    );
 
     if (count > 0) {
       this.logger.log(`Transitioned ${count} reservation(s) EN_PROGRESO -> COMPLETADA`);
