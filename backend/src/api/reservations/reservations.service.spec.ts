@@ -1,20 +1,24 @@
 import { ReservationStatus, TipoNotificacion } from '../../../generated/prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ReservationsService } from './reservations.service';
 
+type MockFn = jest.Mock<unknown, unknown[]>;
+type PrismaServiceMock = {
+  pet: { findUnique: MockFn };
+  room: { findUnique: MockFn };
+  reservation: {
+    findFirst: MockFn;
+    findUnique: MockFn;
+    findMany: MockFn;
+    create: MockFn;
+    update: MockFn;
+  };
+};
+
 describe('ReservationsService', () => {
   let service: ReservationsService;
-  let prisma: {
-    pet: { findUnique: jest.Mock };
-    room: { findUnique: jest.Mock };
-    reservation: {
-      findFirst: jest.Mock;
-      findUnique: jest.Mock;
-      findMany: jest.Mock;
-      create: jest.Mock;
-      update: jest.Mock;
-    };
-  };
+  let prisma: PrismaServiceMock;
   let notificationsService: { sendByType: jest.Mock };
 
   beforeEach(() => {
@@ -43,7 +47,7 @@ describe('ReservationsService', () => {
     };
 
     service = new ReservationsService(
-      prisma as any,
+      prisma as unknown as PrismaService,
       notificationsService as unknown as NotificationsService,
     );
   });

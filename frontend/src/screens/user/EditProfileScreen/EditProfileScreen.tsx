@@ -15,6 +15,7 @@ import { ScreenPropsWithRoute } from '@/src/types';
 import { useAuth } from '@/src/context/AuthContext';
 import { userService } from '@/src/services/api/user.service';
 import { useToast } from '@/src/hooks/useToast';
+import { getFriendlyErrorMessage } from '@/src/utils/errors';
 import { styles } from './EditProfileScreen.styles';
 
 export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
@@ -95,7 +96,10 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
         navigation.goBack();
       }, 800);
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || error?.message || 'Hubo un error actualizando el perfil, vuelva a intentar';
+      const errorMessage = getFriendlyErrorMessage(
+        error,
+        'Hubo un error actualizando el perfil, vuelva a intentar',
+      );
       showToast(errorMessage, 'error');
       setIsLoading(false);
     }

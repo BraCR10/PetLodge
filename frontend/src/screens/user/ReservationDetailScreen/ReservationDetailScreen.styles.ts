@@ -51,6 +51,32 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 12,
   },
+  petHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  petHeaderText: {
+    flex: 1,
+  },
+  petAvatarImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  petAvatarFallback: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  petAvatarFallbackText: {
+    color: Colors.background,
+    fontWeight: '700',
+    fontSize: 18,
+  },
   serviciosList: {
     gap: Spacing.xs,
   },

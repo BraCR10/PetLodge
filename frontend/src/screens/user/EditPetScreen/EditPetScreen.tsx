@@ -20,6 +20,7 @@ import { useToast } from '@/src/hooks/useToast';
 import { Mascota, SexoMascota, TamañoMascota, ScreenPropsWithRoute } from '@/src/types';
 import { petsService } from '@/src/services/api/pets.service';
 import { styles } from './EditPetScreen.styles';
+import { getFriendlyErrorMessage } from '@/src/utils/errors';
 
 export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, route }) => {
   const mascota = route.params?.pet;
@@ -97,6 +98,7 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
       newErrors.meses = 'La edad no puede ser 0 años y 0 meses';
     }
     if (!estadoVacunacion.trim()) newErrors.estadoVacunacion = 'El estado de vacunación es requerido';
+    if (!condicionesMedicas.trim()) newErrors.condicionesMedicas = 'Las condiciones médicas son requeridas ("Ninguna" si no aplica)';
     if (!numeroVeterinario.trim()) newErrors.numeroVeterinario = 'El número de veterinario es requerido';
     else if (!/^\+?[\d\s\-()]{7,20}$/.test(numeroVeterinario.trim())) newErrors.numeroVeterinario = 'Formato inválido (ej: +506 2234-5678)';
 
@@ -149,8 +151,12 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
         navigation.goBack();
       }, 800);
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message ||
-        (isEditMode ? 'Hubo un error actualizando la mascota, vuelva a intentar' : 'Hubo un error creando la mascota, vuelva a intentar');
+      const errorMessage = getFriendlyErrorMessage(
+        err,
+        isEditMode
+          ? 'Hubo un error actualizando la mascota, vuelva a intentar'
+          : 'Hubo un error creando la mascota, vuelva a intentar',
+      );
       showToast(errorMessage, 'error');
       setIsSubmitting(false);
     }
@@ -367,6 +373,7 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
               error={errors.condicionesMedicas}
               multiline
               numberOfLines={3}
+              required
             />
 
             <Input

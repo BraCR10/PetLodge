@@ -1,18 +1,22 @@
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { TipoNotificacion } from '../../../generated/prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuthService } from './auth.service';
 
+type MockFn = jest.Mock<unknown, unknown[]>;
+type PrismaServiceMock = {
+  user: {
+    findFirst: MockFn;
+    create: MockFn;
+    findUnique: MockFn;
+  };
+};
+
 describe('AuthService', () => {
   let service: AuthService;
-  let prisma: {
-    user: {
-      findFirst: jest.Mock;
-      create: jest.Mock;
-      findUnique: jest.Mock;
-    };
-  };
+  let prisma: PrismaServiceMock;
   let jwtService: { sign: jest.Mock };
   let notificationsService: { sendByType: jest.Mock };
 
@@ -38,7 +42,7 @@ describe('AuthService', () => {
     };
 
     service = new AuthService(
-      prisma as any,
+      prisma as unknown as PrismaService,
       jwtService as unknown as JwtService,
       notificationsService as unknown as NotificationsService,
     );

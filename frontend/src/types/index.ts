@@ -39,6 +39,7 @@ export type Reserva = {
   mascotaId: string;
   habitacionId: string;
   nombreMascota: string;
+  fotoMascota?: string;
   habitacion: string;
   fechaEntrada: string;
   fechaSalida: string;

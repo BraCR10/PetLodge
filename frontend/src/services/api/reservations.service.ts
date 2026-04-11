@@ -20,6 +20,7 @@ export interface ReservationResponse {
   mascotaId: string;
   habitacionId: string;
   nombreMascota: string;
+  fotoMascota?: string;
   habitacion: string;
   fechaEntrada: string;
   fechaSalida: string;
@@ -78,6 +79,18 @@ export const reservationsService = {
   ): Promise<ReservationResponse> {
     try {
       const response = await apiClient.patch<ReservationResponse>(`/reservations/${id}`, data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get all available reservation statuses from the backend
+   */
+  async getStatuses(): Promise<string[]> {
+    try {
+      const response = await apiClient.get<string[]>('/reservations/statuses');
       return response.data;
     } catch (error) {
       throw error;

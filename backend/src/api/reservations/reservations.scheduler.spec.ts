@@ -3,7 +3,10 @@ import { ReservationStatus } from '../../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ReservationsScheduler } from './reservations.scheduler';
 
-const mockPrisma = {
+type UpdateManyResult = { count: number };
+type MockFn = jest.Mock<Promise<UpdateManyResult>, [unknown]>;
+
+const mockPrisma: { reservation: { updateMany: MockFn } } = {
   reservation: {
     updateMany: jest.fn(),
   },
@@ -14,10 +17,7 @@ describe('ReservationsScheduler', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ReservationsScheduler,
-        { provide: PrismaService, useValue: mockPrisma },
-      ],
+      providers: [ReservationsScheduler, { provide: PrismaService, useValue: mockPrisma }],
     }).compile();
 
     scheduler = module.get<ReservationsScheduler>(ReservationsScheduler);

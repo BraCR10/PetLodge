@@ -18,6 +18,7 @@ import { useToast } from '@/src/hooks/useToast';
 import { Mascota, ScreenProps } from '@/src/types';
 import { petsService } from '@/src/services/api/pets.service';
 import { styles } from './PetsScreen.styles';
+import { getFriendlyErrorMessage } from '@/src/utils/errors';
 
 export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [pets, setPets] = useState<Mascota[]>([]);
@@ -57,7 +58,7 @@ export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
         }))
       );
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar mascotas';
+      const errorMessage = getFriendlyErrorMessage(err, 'Error al cargar mascotas');
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -91,7 +92,7 @@ export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
               setPets((prev) => prev.filter((pet) => pet.id !== petId));
               showToast('Mascota eliminada', 'success');
             } catch (err: any) {
-              const errorMessage = err?.response?.data?.message || err?.message || 'Hubo un error eliminando la mascota, vuelva a intentar';
+              const errorMessage = getFriendlyErrorMessage(err, 'Hubo un error eliminando la mascota, vuelva a intentar');
               showToast(errorMessage, 'error');
             } finally {
               setDeleting(false);

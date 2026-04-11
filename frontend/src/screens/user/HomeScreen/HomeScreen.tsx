@@ -135,7 +135,7 @@ export const HomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
         <Button
           title="Cerrar sesión"
           onPress={handleLogout}
-          variant="secondary"
+          variant="destructive"
           fullWidth
           size="lg"
           style={styles.logoutButton}

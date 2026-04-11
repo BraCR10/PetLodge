@@ -8,6 +8,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
+import sharp from 'sharp';
 
 @Injectable()
 export class StorageService {
@@ -35,13 +36,14 @@ export class StorageService {
 
   async upload(buffer: Buffer, mimetype: string, filename: string): Promise<string> {
     const key = `${randomUUID()}-${filename}`;
+    const normalized = await this.optimizeImage(buffer, mimetype);
 
     await this.s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
-        Body: buffer,
-        ContentType: mimetype,
+        Body: normalized.buffer,
+        ContentType: normalized.contentType,
       }),
     );
 
@@ -102,5 +104,26 @@ export class StorageService {
       return `${this.endpoint}/${this.bucket}/${key}`;
     }
     return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+  }
+
+  private async optimizeImage(
+    buffer: Buffer,
+    mimetype: string,
+  ): Promise<{ buffer: Buffer; contentType: string }> {
+    if (!mimetype.startsWith('image/')) {
+      return { buffer, contentType: mimetype };
+    }
+
+    try {
+      const resized = await sharp(buffer)
+        .rotate()
+        .resize({ width: 1024, height: 1024, fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+
+      return { buffer: resized, contentType: 'image/jpeg' };
+    } catch {
+      return { buffer, contentType: mimetype };
+    }
   }
 }

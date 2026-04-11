@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ReservationResponseDto {
   @ApiProperty({ example: '0f3bdb67-157e-4ab0-9f9d-117fca5a58d5' })
@@ -12,6 +12,9 @@ export class ReservationResponseDto {
 
   @ApiProperty({ example: 'Milo' })
   nombreMascota: string;
+
+  @ApiPropertyOptional({ example: 'https://.../pet-photo.jpg' })
+  fotoMascota?: string;
 
   @ApiProperty({ example: 'Habitacion 11' })
   habitacion: string;

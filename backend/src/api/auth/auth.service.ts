@@ -2,6 +2,7 @@ import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/co
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { TipoNotificacion, User } from '../../../generated/prisma/client';
+import { errorResponse } from '../../common/errors/error-response';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RegisterDto } from './dto/register.dto';
@@ -23,7 +24,12 @@ export class AuthService {
     });
 
     if (existing) {
-      throw new ConflictException('El correo o número de identificación ya está registrado');
+      throw new ConflictException(
+        errorResponse(
+          'USER_ALREADY_EXISTS',
+          'El correo o numero de identificacion ya esta registrado',
+        ),
+      );
     }
 
     const hashed = await bcrypt.hash(dto.password, 12);
@@ -56,12 +62,16 @@ export class AuthService {
     });
 
     if (!user || !user.isActive) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException(
+        errorResponse('INVALID_CREDENTIALS', 'Credenciales invalidas'),
+      );
     }
 
     const valid = await bcrypt.compare(dto.password, user.password);
     if (!valid) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException(
+        errorResponse('INVALID_CREDENTIALS', 'Credenciales invalidas'),
+      );
     }
 
     return {

@@ -3,31 +3,28 @@ import { apiClient } from './client';
 export interface RoomResponse {
   id: string;
   numero: string;
+  numeroInt?: number;
+  disponible?: boolean;
+}
+
+export interface RoomsPageResponse {
+  data: RoomResponse[];
+  total: number;
+  page: number;
+  totalPages: number;
 }
 
 export const roomsService = {
   /**
-   * Get all available rooms
+   * Get paginated rooms. When from and to are provided, each room includes
+   * a `disponible` field indicating availability for that date range.
    */
-  async getRooms(): Promise<RoomResponse[]> {
+  async getRooms(page: number = 1, from?: string, to?: string): Promise<RoomsPageResponse> {
     try {
-      const response = await apiClient.get<RoomResponse[]>('/rooms');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * Get available rooms for a date range
-   * @param from Date in YYYY-MM-DD format
-   * @param to Date in YYYY-MM-DD format
-   */
-  async getAvailableRooms(from: string, to: string): Promise<RoomResponse[]> {
-    try {
-      const response = await apiClient.get<RoomResponse[]>('/rooms/available', {
-        params: { from, to },
-      });
+      const params: Record<string, string | number> = { page };
+      if (from) params.from = from;
+      if (to) params.to = to;
+      const response = await apiClient.get<RoomsPageResponse>('/rooms', { params });
       return response.data;
     } catch (error) {
       throw error;

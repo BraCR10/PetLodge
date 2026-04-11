@@ -269,6 +269,11 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  petAvatarImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
   petAvatarText: {
     color: '#fff',
     fontWeight: '700',
@@ -375,5 +380,19 @@ export const styles = StyleSheet.create({
     ...Typography.caption,
     color: '#fff',
     fontWeight: '700',
+  },
+  roomChipUnavailable: {
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+    opacity: 0.45,
+  },
+  roomChipTextUnavailable: {
+    color: Colors.textSecondary,
+  },
+  roomChipUnavailableLabel: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    fontSize: 10,
+    marginLeft: 2,
   },
 });

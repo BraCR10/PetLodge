@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { AvailableRoomsQueryDto } from './dto/available-rooms-query.dto';
-import { RoomResponseDto } from './dto/room-response.dto';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { RoomsPageResponseDto } from './dto/room-response.dto';
+import { RoomsQueryDto } from './dto/rooms-query.dto';
 import { RoomsService } from './rooms.service';
 
 @ApiTags('rooms')
@@ -10,27 +10,14 @@ import { RoomsService } from './rooms.service';
 export class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}
 
-  @Get('available')
-  @ApiOperation({ summary: 'List available rooms for a date range' })
-  @ApiQuery({ name: 'from', example: '2026-04-10', required: true })
-  @ApiQuery({ name: 'to', example: '2026-04-12', required: true })
-  @ApiOkResponse({
-    description: 'Array of available rooms',
-    type: RoomResponseDto,
-    isArray: true,
-  })
-  findAvailable(@Query() query: AvailableRoomsQueryDto) {
-    return this.roomsService.findAvailable(query.from, query.to);
-  }
-
   @Get()
-  @ApiOperation({ summary: 'List all rooms' })
-  @ApiOkResponse({
-    description: 'Array of rooms',
-    type: RoomResponseDto,
-    isArray: true,
+  @ApiOperation({
+    summary: 'List rooms with pagination',
+    description:
+      'Returns a paginated list of rooms. When from/to are provided, each room includes a `disponible` field indicating availability for that date range.',
   })
-  findAll() {
-    return this.roomsService.findAll();
+  @ApiOkResponse({ type: RoomsPageResponseDto })
+  findAll(@Query() query: RoomsQueryDto) {
+    return this.roomsService.findAll(query.page ?? 1, query.from, query.to);
   }
 }
