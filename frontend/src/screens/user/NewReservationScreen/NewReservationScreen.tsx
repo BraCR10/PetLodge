@@ -22,6 +22,7 @@ import { roomsService } from '@/src/services/api/rooms.service';
 import { reservationsService } from '@/src/services/api/reservations.service';
 import { Colors, Spacing } from '@/src/utils/theme';
 import { styles } from './NewReservationScreen.styles';
+import { getFriendlyErrorMessage } from '@/src/utils/errors';
 
 const isWeb = Platform.OS === 'web';
 
@@ -87,7 +88,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
       const data = await petsService.getPets();
       setPets(data as Mascota[]);
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar mascotas';
+      const errorMessage = getFriendlyErrorMessage(err, 'Error al cargar mascotas');
       setGeneralError(errorMessage);
     } finally {
       setLoadingPets(false);
@@ -124,7 +125,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
       setTotalPages(response.totalPages);
       setRoomsSearched(true);
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar habitaciones';
+      const errorMessage = getFriendlyErrorMessage(err, 'Error al cargar habitaciones');
       showToast(errorMessage, 'error');
       setRoomsSearched(true);
     } finally {
@@ -241,7 +242,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
         navigation.goBack();
       }, 800);
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 'Hubo un error creando la reserva, vuelva a intentar';
+      const errorMessage = getFriendlyErrorMessage(err, 'Hubo un error creando la reserva, vuelva a intentar');
       showToast(errorMessage, 'error');
       setIsSubmitting(false);
     }

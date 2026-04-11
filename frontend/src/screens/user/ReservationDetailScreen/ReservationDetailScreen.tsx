@@ -15,6 +15,7 @@ import { Colors, Spacing, Typography } from '@/src/utils/theme';
 import { Reserva, EstadoReserva, ScreenPropsWithRoute } from '@/src/types';
 import { reservationsService } from '@/src/services/api/reservations.service';
 import { styles } from './ReservationDetailScreen.styles';
+import { getFriendlyErrorMessage } from '@/src/utils/errors';
 
 export const ReservationDetailScreen: React.FC<ScreenPropsWithRoute> = ({
   navigation,
@@ -109,7 +110,7 @@ export const ReservationDetailScreen: React.FC<ScreenPropsWithRoute> = ({
                 navigation.goBack();
               }, 800);
             } catch (err: any) {
-              const errorMessage = err?.response?.data?.message || err?.message || 'Hubo un error cancelando la reserva, vuelva a intentar';
+              const errorMessage = getFriendlyErrorMessage(err, 'Hubo un error cancelando la reserva, vuelva a intentar');
               showToast(errorMessage, 'error');
               setIsCancelling(false);
             }

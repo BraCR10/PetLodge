@@ -10,9 +10,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Button } from '@/src/components/ui/Button';
+import { Toast } from '@/src/components/ui/Toast';
+import { useToast } from '@/src/hooks/useToast';
 import { ScreenProps, NotificationTemplate } from '@/src/types';
 import { notificationsService } from '@/src/services/api/notifications.service';
 import { styles } from './NotificationCenterScreen.styles';
+import { getFriendlyErrorMessage } from '@/src/utils/errors';
 
 export const NotificationCenterScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
@@ -21,6 +24,7 @@ export const NotificationCenterScreen: React.FC<ScreenProps> = ({ navigation }) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [templatesList, setTemplatesList] = useState<NotificationTemplate[]>([]);
+  const { toast, showToast } = useToast();
 
   useEffect(() => {
     loadTemplates();
@@ -46,9 +50,9 @@ export const NotificationCenterScreen: React.FC<ScreenProps> = ({ navigation }) 
         setSelectedTemplateId(list[0].id);
       }
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar plantillas';
+      const errorMessage = getFriendlyErrorMessage(err, 'Error al cargar plantillas');
       setError(errorMessage);
-      Alert.alert('Error', errorMessage);
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -99,14 +103,13 @@ export const NotificationCenterScreen: React.FC<ScreenProps> = ({ navigation }) 
         subject: selectedTemplate.subject,
         body: selectedTemplate.body,
       });
-      Alert.alert(
-        'Guardado',
-        `Plantilla para "${getFormattedType(selectedTemplate.tipo)}" ha sido actualizada.`,
-        [{ text: 'OK' }]
+      showToast(
+        `Plantilla para "${getFormattedType(selectedTemplate.tipo)}" actualizada`,
+        'success'
       );
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 'Error al guardar plantilla';
-      Alert.alert('Error', errorMessage);
+      const errorMessage = getFriendlyErrorMessage(err, 'Error al guardar plantilla');
+      showToast(errorMessage, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -114,10 +117,11 @@ export const NotificationCenterScreen: React.FC<ScreenProps> = ({ navigation }) 
 
   return (
     <SafeAreaView style={styles.container}>
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>Centro de Notificaciones</Text>
-          <Text style={styles.subtitle}>Manage notification templates</Text>
+          <Text style={styles.subtitle}>Administrar plantillas de notificaciones</Text>
         </View>
 
         {isLoading ? (
@@ -142,7 +146,7 @@ export const NotificationCenterScreen: React.FC<ScreenProps> = ({ navigation }) 
         ) : (
           <>
             <View style={styles.notificationTypes}>
-              <Text style={styles.typeLabel}>Notification Types</Text>
+               <Text style={styles.typeLabel}>Tipos de notificación</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -173,22 +177,22 @@ export const NotificationCenterScreen: React.FC<ScreenProps> = ({ navigation }) 
             {selectedTemplate && (
               <>
                 <View style={styles.editorSection}>
-                  <Text style={styles.sectionTitle}>Email Template Editor</Text>
+                  <Text style={styles.sectionTitle}>Editor de plantilla de correo</Text>
 
-                  <Text style={styles.inputLabel}>Email subject</Text>
+                  <Text style={styles.inputLabel}>Asunto del correo</Text>
                   <TextInput
                     style={styles.subjectInput}
-                    placeholder="Enter email subject"
+                    placeholder="Ingrese el asunto del correo"
                     value={selectedTemplate.subject}
                     onChangeText={handleSubjectChange}
                     placeholderTextColor="#999"
                     editable={!isSubmitting}
                   />
 
-                  <Text style={styles.inputLabel}>Email body / template</Text>
+                  <Text style={styles.inputLabel}>Cuerpo del correo / plantilla</Text>
                   <TextInput
                     style={styles.bodyInput}
-                    placeholder="Enter email body"
+                    placeholder="Ingrese el cuerpo del correo"
                     value={selectedTemplate.body}
                     onChangeText={handleBodyChange}
                     multiline
@@ -198,7 +202,7 @@ export const NotificationCenterScreen: React.FC<ScreenProps> = ({ navigation }) 
                 </View>
 
                 <View style={styles.variablesSection}>
-                  <Text style={styles.variablesTitle}>Available variables:</Text>
+                  <Text style={styles.variablesTitle}>Variables disponibles:</Text>
                   <View style={styles.variablesList}>
                     {selectedTemplate.variables.map((variable) => (
                       <View key={variable} style={styles.variableTag}>

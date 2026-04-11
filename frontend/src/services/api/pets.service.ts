@@ -99,7 +99,8 @@ export const petsService = {
       }
 
       const token = await AsyncStorage.getItem('auth_token');
-      const url = `${process.env.EXPO_PUBLIC_API_BASE_URL}/pets`;
+      const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/$/, '') || '';
+      const url = `${baseUrl}/pets`;
       console.log('📤 Sending POST to:', url);
       
       const response = await fetch(url, {
@@ -156,7 +157,8 @@ export const petsService = {
       }
 
       const token = await AsyncStorage.getItem('auth_token');
-      const url = `${process.env.EXPO_PUBLIC_API_BASE_URL}/pets/${id}`;
+      const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/$/, '') || '';
+      const url = `${baseUrl}/pets/${id}`;
       console.log('📤 Sending PATCH to:', url);
       
       const response = await fetch(url, {

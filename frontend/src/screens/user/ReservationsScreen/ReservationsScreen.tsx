@@ -13,9 +13,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { Spacing, Colors } from '@/src/utils/theme';
+import { Toast } from '@/src/components/ui/Toast';
+import { useToast } from '@/src/hooks/useToast';
 import { Reserva, EstadoReserva, ScreenProps } from '@/src/types';
 import { reservationsService } from '@/src/services/api/reservations.service';
 import { styles } from './ReservationsScreen.styles';
+import { getFriendlyErrorMessage } from '@/src/utils/errors';
 
 type FilterType = 'all' | string;
 
@@ -36,6 +39,7 @@ export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
+  const { toast, showToast } = useToast();
 
   const loadReservations = async (currentFilter: FilterType = 'all') => {
     try {
@@ -49,7 +53,7 @@ export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
       setReservations(data as Reserva[]);
       setStatuses(statusList);
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar reservas';
+      const errorMessage = getFriendlyErrorMessage(err, 'Error al cargar reservas');
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -83,8 +87,8 @@ export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
               await reservationsService.cancelReservation(resId);
               await loadReservations();
             } catch (err: any) {
-              const errorMessage = err?.response?.data?.message || err?.message || 'Error al cancelar reserva';
-              Alert.alert('Error', errorMessage);
+              const errorMessage = getFriendlyErrorMessage(err, 'Error al cancelar reserva');
+              showToast(errorMessage, 'error');
             }
           },
           style: 'destructive',
@@ -127,6 +131,7 @@ export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} />
       {loading ? (
         <View style={[styles.content, { justifyContent: 'center', alignItems: 'center', flex: 1 }]}>
           <ActivityIndicator size="large" color={Colors.primary} />

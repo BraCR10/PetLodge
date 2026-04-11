@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
+import { Toast } from '@/src/components/ui/Toast';
+import { useToast } from '@/src/hooks/useToast';
 import { Spacing } from '@/src/utils/theme';
 import { ScreenProps } from '@/src/types';
 import { useAuth } from '@/src/context/AuthContext';
@@ -16,6 +18,7 @@ import { styles } from './AdminHomeScreen.styles';
 
 export const AdminHomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const { logout } = useAuth();
+  const { toast, showToast } = useToast();
 
   const modules = [
     {
@@ -48,10 +51,9 @@ export const AdminHomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
     if (moduleId === 'notifications') {
       navigation.navigate('NotificationCenter');
     } else {
-      Alert.alert(
-        moduleName,
-        `${moduleName} feature coming soon`,
-        [{ text: 'OK' }]
+      showToast(
+        `${moduleName} próximamente disponible`,
+        'success'
       );
     }
   };
@@ -75,6 +77,7 @@ export const AdminHomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <View style={styles.badge}>
@@ -82,7 +85,7 @@ export const AdminHomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
             <Text style={styles.badgeText}>MODO ADMINISTRADOR</Text>
           </View>
           <Text style={styles.welcomeText}>Panel de Control</Text>
-          <Text style={styles.subtitle}>Manage your PetLodge platform</Text>
+          <Text style={styles.subtitle}>Gestiona tu plataforma PetLodge</Text>
         </View>
 
         <View style={styles.divider} />
