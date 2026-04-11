@@ -34,9 +34,9 @@ export class RoomsService {
     })) as RoomWithReservations[];
 
     allRooms.sort((a, b) => {
-      const numA = parseInt(a.numero, 10);
-      const numB = parseInt(b.numero, 10);
-      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+      const numA = this.extractRoomNumber(a.numero);
+      const numB = this.extractRoomNumber(b.numero);
+      if (numA !== null && numB !== null) return numA - numB;
       return a.numero.localeCompare(b.numero);
     });
 
@@ -45,11 +45,11 @@ export class RoomsService {
     const pageRooms = allRooms.slice(skip, skip + PAGE_SIZE);
 
     const data: RoomResponseDto[] = pageRooms.map((room) => {
-      const numeroInt = Number.parseInt(room.numero, 10);
+      const numeroInt = this.extractRoomNumber(room.numero);
       const result: RoomResponseDto = {
         id: room.id,
         numero: room.numero,
-        numeroInt: Number.isNaN(numeroInt) ? undefined : numeroInt,
+        numeroInt: numeroInt ?? undefined,
       };
       if (dateRange) {
         result.disponible = (room.reservations ?? []).length === 0;
@@ -99,5 +99,12 @@ export class RoomsService {
     }
 
     return date;
+  }
+
+  private extractRoomNumber(value: string): number | null {
+    const match = value.match(/\d+/);
+    if (!match) return null;
+    const parsed = Number.parseInt(match[0], 10);
+    return Number.isNaN(parsed) ? null : parsed;
   }
 }
