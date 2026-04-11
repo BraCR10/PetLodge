@@ -32,18 +32,14 @@ export class SessionGuard implements CanActivate {
     const token = this.extractBearer(request);
 
     if (!token) {
-      throw new UnauthorizedException(
-        errorResponse('NOT_AUTHENTICATED', 'No autenticado'),
-      );
+      throw new UnauthorizedException(errorResponse('NOT_AUTHENTICATED', 'No autenticado'));
     }
 
     let payload: JwtPayload;
     try {
       payload = this.jwtService.verify<JwtPayload>(token);
     } catch {
-      throw new UnauthorizedException(
-        errorResponse('INVALID_TOKEN', 'Token invalido o expirado'),
-      );
+      throw new UnauthorizedException(errorResponse('INVALID_TOKEN', 'Token invalido o expirado'));
     }
 
     const user = await this.prisma.user.findUnique({

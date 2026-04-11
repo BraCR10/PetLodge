@@ -15,10 +15,7 @@ export class ReservationsScheduler {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
-    await Promise.all([
-      this.transitionToInProgress(today),
-      this.transitionToCompleted(today),
-    ]);
+    await Promise.all([this.transitionToInProgress(today), this.transitionToCompleted(today)]);
   }
 
   /**

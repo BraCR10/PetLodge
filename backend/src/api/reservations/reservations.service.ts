@@ -15,12 +15,6 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 
-const ACTIVE_RESERVATION_STATUSES = [
-  ReservationStatus.CONFIRMADA,
-  ReservationStatus.EN_PROGRESO,
-  ReservationStatus.COMPLETADA,
-] as const;
-
 const reservationInclude = {
   pet: {
     select: {
@@ -91,10 +85,7 @@ export class ReservationsService {
 
     if (!reservation) {
       throw new InternalServerErrorException(
-        errorResponse(
-          'RESERVATION_CREATE_FAILED',
-          'No se pudo recuperar la reserva creada',
-        ),
+        errorResponse('RESERVATION_CREATE_FAILED', 'No se pudo recuperar la reserva creada'),
       );
     }
 
@@ -197,10 +188,7 @@ export class ReservationsService {
 
     if (!updatedReservation) {
       throw new InternalServerErrorException(
-        errorResponse(
-          'RESERVATION_UPDATE_FAILED',
-          'No se pudo recuperar la reserva actualizada',
-        ),
+        errorResponse('RESERVATION_UPDATE_FAILED', 'No se pudo recuperar la reserva actualizada'),
       );
     }
 
@@ -255,9 +243,7 @@ export class ReservationsService {
     });
 
     if (!room) {
-      throw new NotFoundException(
-        errorResponse('ROOM_NOT_FOUND', 'Habitacion no encontrada'),
-      );
+      throw new NotFoundException(errorResponse('ROOM_NOT_FOUND', 'Habitacion no encontrada'));
     }
   }
 
@@ -271,9 +257,7 @@ export class ReservationsService {
     });
 
     if (!reservation) {
-      throw new NotFoundException(
-        errorResponse('RESERVATION_NOT_FOUND', 'Reserva no encontrada'),
-      );
+      throw new NotFoundException(errorResponse('RESERVATION_NOT_FOUND', 'Reserva no encontrada'));
     }
 
     if (reservation.userId !== userId) {
@@ -343,10 +327,7 @@ export class ReservationsService {
   private assertDateRange(fechaEntrada: Date, fechaSalida: Date): void {
     if (fechaEntrada >= fechaSalida) {
       throw new BadRequestException(
-        errorResponse(
-          'INVALID_DATE_RANGE',
-          'La fechaEntrada debe ser anterior a la fechaSalida',
-        ),
+        errorResponse('INVALID_DATE_RANGE', 'La fechaEntrada debe ser anterior a la fechaSalida'),
       );
     }
   }

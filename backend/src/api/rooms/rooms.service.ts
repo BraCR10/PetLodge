@@ -18,7 +18,7 @@ export class RoomsService {
     // Fetch all rooms so we can sort numerically before paginating.
     // Paginating first and sorting after produces wrong cross-page ordering
     // because the DB sorts room numbers as strings ("10" < "2").
-    const allRooms = await this.prisma.room.findMany({
+    const allRooms = (await this.prisma.room.findMany({
       include: dateRange
         ? {
             reservations: {
@@ -31,7 +31,7 @@ export class RoomsService {
             },
           }
         : undefined,
-    }) as RoomWithReservations[];
+    })) as RoomWithReservations[];
 
     allRooms.sort((a, b) => {
       const numA = parseInt(a.numero, 10);

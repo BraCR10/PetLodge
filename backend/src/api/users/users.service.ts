@@ -39,10 +39,7 @@ export class UsersService {
         }
         if (existing.numeroIdentificacion === dto.numeroIdentificacion) {
           throw new ConflictException(
-            errorResponse(
-              'USER_ID_EXISTS',
-              'El numero de identificacion ya esta registrado',
-            ),
+            errorResponse('USER_ID_EXISTS', 'El numero de identificacion ya esta registrado'),
           );
         }
       }

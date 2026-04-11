@@ -12,7 +12,8 @@ export class RoomResponseDto {
 
   @ApiPropertyOptional({
     example: true,
-    description: 'Whether the room is available for the requested date range. Only present when from/to are provided.',
+    description:
+      'Whether the room is available for the requested date range. Only present when from/to are provided.',
   })
   disponible?: boolean;
 }
