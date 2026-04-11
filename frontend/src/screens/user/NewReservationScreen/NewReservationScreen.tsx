@@ -118,24 +118,10 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
       }));
 
       if (page === 1) {
-        const sorted = [...newRooms].sort((a, b) => {
-          if (a.numeroInt !== undefined && b.numeroInt !== undefined) {
-            return a.numeroInt - b.numeroInt;
-          }
-          return a.name.localeCompare(b.name);
-        });
-        setRooms(sorted);
+        setRooms(newRooms);
         setSelectedHabitacionId(null);
       } else {
-        setRooms((prev) => {
-          const merged = [...prev, ...newRooms];
-          return merged.sort((a, b) => {
-            if (a.numeroInt !== undefined && b.numeroInt !== undefined) {
-              return a.numeroInt - b.numeroInt;
-            }
-            return a.name.localeCompare(b.name);
-          });
-        });
+        setRooms((prev) => [...prev, ...newRooms]);
       }
 
       setCurrentPage(response.page);
