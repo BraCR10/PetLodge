@@ -1,6 +1,12 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pet, PetSex, PetSize, ReservationStatus } from '../../../generated/prisma/client';
+import { errorResponse } from '../../common/errors/error-response';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StorageService } from '../../storage/storage.service';
 import { CreatePetDto } from './dto/create-pet.dto';
@@ -61,8 +67,14 @@ export class PetsService {
 
   async findOne(id: string, userId: string): Promise<PetResponse> {
     const pet = await this.prisma.pet.findUnique({ where: { id } });
-    if (!pet) throw new NotFoundException('Mascota no encontrada');
-    if (pet.userId !== userId) throw new ForbiddenException();
+    if (!pet) {
+      throw new NotFoundException(errorResponse('PET_NOT_FOUND', 'Mascota no encontrada'));
+    }
+    if (pet.userId !== userId) {
+      throw new ForbiddenException(
+        errorResponse('PET_NOT_OWNER', 'La mascota no pertenece al usuario autenticado'),
+      );
+    }
     return await this.toResponse(pet);
   }
 
@@ -125,15 +137,26 @@ export class PetsService {
     });
 
     if (active) {
-      throw new BadRequestException('No se puede eliminar una mascota con reservas activas');
+      throw new BadRequestException(
+        errorResponse(
+          'PET_HAS_ACTIVE_RESERVATIONS',
+          'No se puede eliminar una mascota con reservas activas',
+        ),
+      );
     }
   }
 
   // Verifies ownership and returns the raw Pet record (needed for foto/tamano before mapping).
   private async assertOwnership(id: string, userId: string): Promise<Pet> {
     const pet = await this.prisma.pet.findUnique({ where: { id } });
-    if (!pet || !pet.isActive) throw new NotFoundException('Mascota no encontrada');
-    if (pet.userId !== userId) throw new ForbiddenException();
+    if (!pet || !pet.isActive) {
+      throw new NotFoundException(errorResponse('PET_NOT_FOUND', 'Mascota no encontrada'));
+    }
+    if (pet.userId !== userId) {
+      throw new ForbiddenException(
+        errorResponse('PET_NOT_OWNER', 'La mascota no pertenece al usuario autenticado'),
+      );
+    }
     return pet;
   }
 

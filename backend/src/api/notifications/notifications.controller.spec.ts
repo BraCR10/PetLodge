@@ -1,5 +1,6 @@
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
+import { AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 
 describe('NotificationsController', () => {
   let controller: NotificationsController;
@@ -68,7 +69,7 @@ describe('NotificationsController', () => {
     ];
     notificationsService.findLogs.mockResolvedValue(result);
 
-    const response = await controller.findLogs({ id: 'user-1' } as any);
+    const response = await controller.findLogs({ id: 'user-1' } as AuthenticatedUser);
 
     expect(response).toEqual(result);
     expect(notificationsService.findLogs).toHaveBeenCalledWith('user-1');

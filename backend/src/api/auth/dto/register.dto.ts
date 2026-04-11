@@ -2,6 +2,9 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsEmail, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
+const toLowerTrim = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.toLowerCase().trim() : value;
+
 export class RegisterDto {
   @ApiProperty()
   @IsString({ message: 'El nombre es requerido' })
@@ -16,7 +19,7 @@ export class RegisterDto {
   numeroIdentificacion: string;
 
   @ApiProperty()
-  @Transform(({ value }) => value?.toLowerCase().trim())
+  @Transform(toLowerTrim)
   @IsEmail({}, { message: 'El correo no es válido' })
   email: string;
 

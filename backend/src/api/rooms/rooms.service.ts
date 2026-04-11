@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Room } from '../../../generated/prisma/client';
+import { errorResponse } from '../../common/errors/error-response';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RoomsPageResponseDto, RoomResponseDto } from './dto/room-response.dto';
 
@@ -17,7 +18,7 @@ export class RoomsService {
     // Fetch all rooms so we can sort numerically before paginating.
     // Paginating first and sorting after produces wrong cross-page ordering
     // because the DB sorts room numbers as strings ("10" < "2").
-    const allRooms = await this.prisma.room.findMany({
+    const allRooms = (await this.prisma.room.findMany({
       include: dateRange
         ? {
             reservations: {
@@ -30,7 +31,7 @@ export class RoomsService {
             },
           }
         : undefined,
-    }) as RoomWithReservations[];
+    })) as RoomWithReservations[];
 
     allRooms.sort((a, b) => {
       const numA = parseInt(a.numero, 10);
@@ -44,7 +45,12 @@ export class RoomsService {
     const pageRooms = allRooms.slice(skip, skip + PAGE_SIZE);
 
     const data: RoomResponseDto[] = pageRooms.map((room) => {
-      const result: RoomResponseDto = { id: room.id, numero: room.numero };
+      const numeroInt = Number.parseInt(room.numero, 10);
+      const result: RoomResponseDto = {
+        id: room.id,
+        numero: room.numero,
+        numeroInt: Number.isNaN(numeroInt) ? undefined : numeroInt,
+      };
       if (dateRange) {
         result.disponible = (room.reservations ?? []).length === 0;
       }
@@ -66,7 +72,9 @@ export class RoomsService {
     const toDate = this.parseDateOnly(to, 'to');
 
     if (fromDate >= toDate) {
-      throw new BadRequestException('La fecha from debe ser anterior a la fecha to');
+      throw new BadRequestException(
+        errorResponse('INVALID_DATE_RANGE', 'La fecha from debe ser anterior a la fecha to'),
+      );
     }
 
     return { from: fromDate, to: toDate };
@@ -85,7 +93,9 @@ export class RoomsService {
       date.getUTCMonth() !== month - 1 ||
       date.getUTCDate() !== day
     ) {
-      throw new BadRequestException(`La fecha ${fieldName} no es valida`);
+      throw new BadRequestException(
+        errorResponse('INVALID_DATE', `La fecha ${fieldName} no es valida`),
+      );
     }
 
     return date;

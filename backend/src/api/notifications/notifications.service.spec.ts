@@ -1,7 +1,17 @@
 import { ConfigService } from '@nestjs/config';
 import { NotFoundException } from '@nestjs/common';
 import { Prisma, TipoNotificacion } from '../../../generated/prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from './notifications.service';
+
+type MockFn = jest.Mock<unknown, unknown[]>;
+type PrismaServiceMock = {
+  notificationTemplate: { findMany: MockFn; findUnique: MockFn; update: MockFn };
+  user: { findUnique: MockFn };
+  reservation: { findUnique: MockFn };
+  notificationLog: { create: MockFn; findMany: MockFn };
+};
+type ConfigServiceMock = { get: MockFn };
 
 describe('NotificationsService', () => {
   const template = {
@@ -21,14 +31,9 @@ describe('NotificationsService', () => {
   };
 
   let service: NotificationsService;
-  let prisma: {
-    notificationTemplate: { findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
-    user: { findUnique: jest.Mock };
-    reservation: { findUnique: jest.Mock };
-    notificationLog: { create: jest.Mock; findMany: jest.Mock };
-  };
-  let config: { get: jest.Mock };
-  let sendMail: jest.Mock;
+  let prisma: PrismaServiceMock;
+  let config: ConfigServiceMock;
+  let sendMail: MockFn;
   const logoAttachment = {
     filename: 'petlodge-logo.png',
     path: 'C:/fake/petlodge-logo.png',
@@ -69,11 +74,16 @@ describe('NotificationsService', () => {
     };
 
     sendMail = jest.fn().mockResolvedValue(undefined);
-    service = new NotificationsService(prisma as any, config as unknown as ConfigService);
-    jest.spyOn(service as any, 'createTransporter').mockReturnValue({
-      sendMail,
-    } as any);
-    jest.spyOn(service as any, 'getLogoAttachment').mockReturnValue(logoAttachment);
+    service = new NotificationsService(
+      prisma as unknown as PrismaService,
+      config as unknown as ConfigService,
+    );
+    const serviceUnsafe = service as unknown as {
+      createTransporter: () => { sendMail: MockFn };
+      getLogoAttachment: () => typeof logoAttachment | null;
+    };
+    jest.spyOn(serviceUnsafe, 'createTransporter').mockReturnValue({ sendMail });
+    jest.spyOn(serviceUnsafe, 'getLogoAttachment').mockReturnValue(logoAttachment);
   });
 
   afterEach(() => {
@@ -249,9 +259,10 @@ describe('NotificationsService', () => {
       html: expect.stringContaining('cid:petlodge-logo'),
       attachments: [logoAttachment],
     });
-    expect(sendMail.mock.calls[0][0].html).toEqual(expect.stringContaining('Registro exitoso'));
-    expect(sendMail.mock.calls[0][0].html).toEqual(expect.stringContaining('Mascota'));
-    expect(sendMail.mock.calls[0][0].html).toEqual(expect.stringContaining('Habitacion 11'));
+    const firstMail = sendMail.mock.calls[0]?.[0] as { html?: string };
+    expect(firstMail.html).toEqual(expect.stringContaining('Registro exitoso'));
+    expect(firstMail.html).toEqual(expect.stringContaining('Mascota'));
+    expect(firstMail.html).toEqual(expect.stringContaining('Habitacion 11'));
     expect(prisma.notificationLog.create).toHaveBeenCalledWith({
       data: {
         tipo: TipoNotificacion.REGISTRO_USUARIO,
