@@ -1,5 +1,6 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { User } from '../../../generated/prisma/client';
+import { errorResponse } from '../../common/errors/error-response';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -32,10 +33,17 @@ export class UsersService {
 
       if (existing) {
         if (existing.email === dto.email) {
-          throw new ConflictException('El correo ya está registrado');
+          throw new ConflictException(
+            errorResponse('USER_EMAIL_EXISTS', 'El correo ya esta registrado'),
+          );
         }
         if (existing.numeroIdentificacion === dto.numeroIdentificacion) {
-          throw new ConflictException('El número de identificación ya está registrado');
+          throw new ConflictException(
+            errorResponse(
+              'USER_ID_EXISTS',
+              'El numero de identificacion ya esta registrado',
+            ),
+          );
         }
       }
     }

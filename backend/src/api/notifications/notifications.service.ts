@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma, TipoNotificacion } from '../../../generated/prisma/client';
+import { errorResponse } from '../../common/errors/error-response';
 import { PrismaService } from '../../prisma/prisma.service';
 import { existsSync } from 'fs';
 import * as nodemailer from 'nodemailer';
@@ -47,7 +48,9 @@ export class NotificationsService {
     });
 
     if (!template) {
-      throw new NotFoundException('Plantilla de notificacion no encontrada');
+      throw new NotFoundException(
+        errorResponse('NOTIFICATION_TEMPLATE_NOT_FOUND', 'Plantilla de notificacion no encontrada'),
+      );
     }
 
     return template;
@@ -64,7 +67,12 @@ export class NotificationsService {
       });
     } catch (error: unknown) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        throw new NotFoundException('Plantilla de notificacion no encontrada');
+        throw new NotFoundException(
+          errorResponse(
+            'NOTIFICATION_TEMPLATE_NOT_FOUND',
+            'Plantilla de notificacion no encontrada',
+          ),
+        );
       }
 
       throw error;

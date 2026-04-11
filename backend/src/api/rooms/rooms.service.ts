@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Room } from '../../../generated/prisma/client';
+import { errorResponse } from '../../common/errors/error-response';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RoomsPageResponseDto, RoomResponseDto } from './dto/room-response.dto';
 
@@ -66,7 +67,9 @@ export class RoomsService {
     const toDate = this.parseDateOnly(to, 'to');
 
     if (fromDate >= toDate) {
-      throw new BadRequestException('La fecha from debe ser anterior a la fecha to');
+      throw new BadRequestException(
+        errorResponse('INVALID_DATE_RANGE', 'La fecha from debe ser anterior a la fecha to'),
+      );
     }
 
     return { from: fromDate, to: toDate };
@@ -85,7 +88,9 @@ export class RoomsService {
       date.getUTCMonth() !== month - 1 ||
       date.getUTCDate() !== day
     ) {
-      throw new BadRequestException(`La fecha ${fieldName} no es valida`);
+      throw new BadRequestException(
+        errorResponse('INVALID_DATE', `La fecha ${fieldName} no es valida`),
+      );
     }
 
     return date;

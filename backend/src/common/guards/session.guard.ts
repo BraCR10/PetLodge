@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
+import { errorResponse } from '../errors/error-response';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 interface JwtPayload {
@@ -31,14 +32,18 @@ export class SessionGuard implements CanActivate {
     const token = this.extractBearer(request);
 
     if (!token) {
-      throw new UnauthorizedException('No autenticado');
+      throw new UnauthorizedException(
+        errorResponse('NOT_AUTHENTICATED', 'No autenticado'),
+      );
     }
 
     let payload: JwtPayload;
     try {
       payload = this.jwtService.verify<JwtPayload>(token);
     } catch {
-      throw new UnauthorizedException('Token inválido o expirado');
+      throw new UnauthorizedException(
+        errorResponse('INVALID_TOKEN', 'Token invalido o expirado'),
+      );
     }
 
     const user = await this.prisma.user.findUnique({
@@ -46,7 +51,9 @@ export class SessionGuard implements CanActivate {
     });
 
     if (!user || !user.isActive) {
-      throw new UnauthorizedException('Cuenta no encontrada o inactiva');
+      throw new UnauthorizedException(
+        errorResponse('ACCOUNT_INACTIVE', 'Cuenta no encontrada o inactiva'),
+      );
     }
 
     request.currentUser = {
