@@ -43,7 +43,7 @@ const notificationTemplates: SeedNotificationTemplate[] = [
     name: 'Bienvenida de usuario',
     subject: 'Bienvenido a PetLodge',
     body: toTemplateBody(
-      'Hola {name},\n\nTu cuenta en PetLodge ya esta lista y puedes empezar a gestionar tus reservas y mascotas.\n\nGracias por confiar en nosotros.\n\nEquipo PetLodge',
+      'Hola {{name}},\n\nTu cuenta en PetLodge ya esta lista y puedes empezar a gestionar tus reservas y mascotas.\n\nGracias por confiar en nosotros.\n\nEquipo PetLodge',
     ),
     variables: ['name', 'email'],
   },
@@ -52,7 +52,7 @@ const notificationTemplates: SeedNotificationTemplate[] = [
     name: 'Confirmacion de reserva',
     subject: 'Tu reserva esta confirmada',
     body: toTemplateBody(
-      'Hola {name},\n\nLa reserva de {petName} fue confirmada con exito.\n\nFechas: {checkInDate} al {checkOutDate}\nHabitacion: {roomNumber}\n\nTe esperamos en PetLodge.\n\nEquipo PetLodge',
+      'Hola {{name}},\n\nLa reserva de {{petName}} fue confirmada con exito.\n\nFechas: {{checkInDate}} al {{checkOutDate}}\nHabitacion: {{roomNumber}}\n\nTe esperamos en PetLodge.\n\nEquipo PetLodge',
     ),
     variables: ['name', 'petName', 'checkInDate', 'checkOutDate', 'roomNumber'],
   },
@@ -61,34 +61,34 @@ const notificationTemplates: SeedNotificationTemplate[] = [
     name: 'Modificacion de reserva',
     subject: 'Tu reserva fue actualizada',
     body: toTemplateBody(
-      'Hola {name},\n\nHicimos cambios en la reserva de {petName}.\n\nNuevas fechas: {checkInDate} al {checkOutDate}\n\nSi deseas revisar otro detalle, estaremos encantados de ayudarte.\n\nEquipo PetLodge',
+      'Hola {{name}},\n\nHicimos cambios en la reserva de {{petName}}.\n\nNuevas fechas: {{checkInDate}} al {{checkOutDate}}\n\nSi deseas revisar otro detalle, estaremos encantados de ayudarte.\n\nEquipo PetLodge',
     ),
     variables: ['name', 'petName', 'checkInDate', 'checkOutDate'],
   },
   {
     tipo: TipoNotificacion.INICIO_HOSPEDAJE,
     name: 'Inicio de hospedaje',
-    subject: '{petName} ya ingreso a PetLodge',
+    subject: '{{petName}} ya ingreso a PetLodge',
     body: toTemplateBody(
-      'Hola {name},\n\nTe contamos que {petName} ya ingreso de forma segura a PetLodge.\n\nHora de ingreso: {checkInTime}\n\nTe mantendremos al tanto si hay novedades.\n\nEquipo PetLodge',
+      'Hola {{name}},\n\nTe contamos que {{petName}} ya ingreso de forma segura a PetLodge.\n\nHora de ingreso: {{checkInTime}}\n\nTe mantendremos al tanto si hay novedades.\n\nEquipo PetLodge',
     ),
     variables: ['name', 'petName', 'checkInTime'],
   },
   {
     tipo: TipoNotificacion.FIN_HOSPEDAJE,
     name: 'Fin de hospedaje',
-    subject: '{petName} finalizo su hospedaje',
+    subject: '{{petName}} finalizo su hospedaje',
     body: toTemplateBody(
-      'Hola {name},\n\n{petName} ya finalizo su hospedaje con nosotros.\n\nGracias por elegir PetLodge y permitirnos cuidar a tu mascota.\n\nEquipo PetLodge',
+      'Hola {{name}},\n\n{{petName}} ya finalizo su hospedaje con nosotros.\n\nGracias por elegir PetLodge y permitirnos cuidar a tu mascota.\n\nEquipo PetLodge',
     ),
     variables: ['name', 'petName'],
   },
   {
     tipo: TipoNotificacion.ESTADO_MASCOTA,
     name: 'Actualizacion de mascota',
-    subject: 'Novedades sobre {petName}',
+    subject: 'Novedades sobre {{petName}}',
     body: toTemplateBody(
-      'Hola {name},\n\nQueremos compartirte una actualizacion sobre {petName}:\n\n{statusMessage}\n\nGracias por confiar en PetLodge.\n\nEquipo PetLodge',
+      'Hola {{name}},\n\nQueremos compartirte una actualizacion sobre {{petName}}:\n\n{{statusMessage}}\n\nGracias por confiar en PetLodge.\n\nEquipo PetLodge',
     ),
     variables: ['name', 'petName', 'statusMessage'],
   },

@@ -189,6 +189,7 @@ export class NotificationsService {
       const replacements = this.normalizeVariables({
         name: user.nombre,
         email: user.email,
+        ...reservationRef.variables,
         ...variables,
       });
       const missingVariables = template.variables.filter(
@@ -458,9 +459,12 @@ export class NotificationsService {
   private async resolveReservationReference(
     reservaId: string | undefined,
     userId: string,
-  ): Promise<{ valid: true; reservaId: string | null } | { valid: false; error: string }> {
+  ): Promise<
+    | { valid: true; reservaId: string | null; variables: NotificationVariables }
+    | { valid: false; error: string }
+  > {
     if (!reservaId) {
-      return { valid: true, reservaId: null };
+      return { valid: true, reservaId: null, variables: {} };
     }
 
     const reservation = await this.prisma.reservation.findUnique({
@@ -468,6 +472,10 @@ export class NotificationsService {
       select: {
         id: true,
         userId: true,
+        fechaEntrada: true,
+        fechaSalida: true,
+        pet: { select: { nombre: true } },
+        room: { select: { numero: true } },
       },
     });
 
@@ -485,7 +493,23 @@ export class NotificationsService {
       };
     }
 
-    return { valid: true, reservaId: reservation.id };
+    const formatDate = (date: Date): string => {
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const year = date.getUTCFullYear();
+      return `${day}/${month}/${year}`;
+    };
+
+    return {
+      valid: true,
+      reservaId: reservation.id,
+      variables: {
+        petName: reservation.pet.nombre,
+        checkInDate: formatDate(reservation.fechaEntrada),
+        checkOutDate: formatDate(reservation.fechaSalida),
+        roomNumber: reservation.room.numero,
+      },
+    };
   }
 
   private async createFailureLog(
