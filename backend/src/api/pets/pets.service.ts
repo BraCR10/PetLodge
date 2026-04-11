@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Pet, PetType, PetSex, PetSize } from '../../../generated/prisma/client';
+import { Pet, PetSex, PetSize } from '../../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StorageService } from '../../storage/storage.service';
 import { CreatePetDto } from './dto/create-pet.dto';
@@ -40,7 +40,7 @@ export class PetsService {
     const pet = await this.prisma.pet.create({
       data: {
         ...fields,
-        tipo: fields.tipo as PetType,
+        tipo: fields.tipo,
         sexo: fields.sexo as PetSex,
         tamano: fields.tamano as PetSize,
         condicionesMedicas: fields.condicionesMedicas ?? '',
@@ -95,7 +95,7 @@ export class PetsService {
     const pet = await this.prisma.pet.update({
       where: { id },
       data: {
-        ...(fields.tipo && { tipo: fields.tipo as PetType }),
+        ...(fields.tipo && { tipo: fields.tipo }),
         ...(fields.sexo && { sexo: fields.sexo as PetSex }),
         ...(fields.tamano && { tamano: fields.tamano as PetSize }),
         ...otherFields,

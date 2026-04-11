@@ -8,14 +8,6 @@ datasource db {
 }
 
 // Pet enums
-enum PetType {
-  PERRO
-  GATO
-  CONEJO
-  PAJARO
-  OTRO
-}
-
 enum PetSex {
   MACHO
   HEMBRA

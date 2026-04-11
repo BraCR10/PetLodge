@@ -1,7 +1,7 @@
 model Pet {
   id                 String        @id @default(uuid())
   nombre             String
-  tipo               PetType
+  tipo               String
   raza               String
   anos               Int           @default(0)
   meses              Int           @default(0)

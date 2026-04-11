@@ -16,7 +16,6 @@ import {
   ValidationArguments,
 } from 'class-validator';
 
-const TIPOS = ['PERRO', 'GATO', 'CONEJO', 'PAJARO', 'OTRO'] as const;
 const SEXOS = ['MACHO', 'HEMBRA'] as const;
 const TAMANOS = ['PEQUENO', 'MEDIANO', 'GRANDE'] as const;
 
@@ -49,9 +48,10 @@ export class CreatePetDto {
   @MaxLength(100, { message: 'El nombre no puede exceder 100 caracteres' })
   nombre: string;
 
-  @ApiProperty({ enum: TIPOS, example: 'PERRO' })
-  @Transform(toUpperCase)
-  @IsIn(TIPOS, { message: 'El tipo debe ser PERRO, GATO, CONEJO, PAJARO u OTRO' })
+  @ApiProperty({ example: 'PERRO' })
+  @IsString({ message: 'El tipo de mascota es requerido' })
+  @MinLength(2, { message: 'El tipo debe tener al menos 2 caracteres' })
+  @MaxLength(50, { message: 'El tipo no puede exceder 50 caracteres' })
   tipo: string;
 
   @ApiProperty({ example: 'Golden Retriever' })
