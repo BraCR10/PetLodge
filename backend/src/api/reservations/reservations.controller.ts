@@ -53,6 +53,20 @@ export class ReservationsController {
     return this.reservationsService.findAll(user.id, query.estado);
   }
 
+  @Get('statuses')
+  @ApiOperation({ summary: 'List all possible reservation statuses' })
+  @ApiOkResponse({
+    description: 'Array of reservation status values',
+    schema: {
+      type: 'array',
+      items: { type: 'string', enum: ['CONFIRMADA', 'EN_PROGRESO', 'COMPLETADA', 'CANCELADA'] },
+      example: ['CONFIRMADA', 'EN_PROGRESO', 'COMPLETADA', 'CANCELADA'],
+    },
+  })
+  getStatuses() {
+    return this.reservationsService.getStatuses();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a reservation by id' })
   @ApiOkResponse({

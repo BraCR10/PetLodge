@@ -4,16 +4,17 @@ import {
   Text,
   SafeAreaView,
   ScrollView,
-  Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
 } from 'react-native';
 import { Button } from '@/src/components/ui/Button';
+import { Toast } from '@/src/components/ui/Toast';
 import { Input } from '@/src/components/ui/Input';
 import { ScreenPropsWithRoute } from '@/src/types';
 import { useAuth } from '@/src/context/AuthContext';
 import { userService } from '@/src/services/api/user.service';
-import { Colors, Spacing } from '@/src/utils/theme';
+import { useToast } from '@/src/hooks/useToast';
 import { styles } from './EditProfileScreen.styles';
 
 export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
@@ -29,7 +30,7 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [generalError, setGeneralError] = useState('');
+  const { toast, showToast } = useToast();
 
   useEffect(() => {
     if (user) {
@@ -69,7 +70,6 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
     if (!validateForm()) return;
 
     setIsLoading(true);
-    setGeneralError('');
 
     try {
       // Call API to update profile
@@ -90,25 +90,18 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
         direccion: updatedUser.direccion,
       });
 
-      // Go back to home immediately
-      navigation.goBack();
+      showToast('Perfil actualizado', 'success', () => {
+        setIsLoading(false);
+        navigation.goBack();
+      }, 800);
     } catch (error: any) {
-      const errorMessage = error?.message || 'Error al guardar cambios';
-      setGeneralError(errorMessage);
-      Alert.alert('Error', errorMessage);
-    } finally {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Hubo un error actualizando el perfil, vuelva a intentar';
+      showToast(errorMessage, 'error');
       setIsLoading(false);
     }
   };
 
   const handleCancel = () => {
-    if (user) {
-      setNombre(user.nombre);
-      setNumeroTelefono(user.numeroTelefono || '');
-      setDireccion(user.direccion || '');
-      setErrors({});
-      setGeneralError('');
-    }
     navigation.goBack();
   };
 
@@ -117,32 +110,14 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
       behavior={Platform.OS === 'android' ? 'height' : undefined}
       style={styles.container}
     >
+      <Modal visible={isLoading} transparent animationType="none">
+        <View style={{ flex: 1 }} />
+      </Modal>
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} />
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>Editar perfil</Text>
-
-          {generalError ? (
-            <View
-              style={{
-                backgroundColor: '#fee',
-                borderRadius: 8,
-                padding: Spacing.md,
-                marginBottom: Spacing.md,
-                borderLeftWidth: 4,
-                borderLeftColor: Colors.error || '#e74c3c',
-              }}
-            >
-              <Text
-                style={{
-                  color: Colors.error || '#c0392b',
-                  fontSize: 14,
-                  fontWeight: '500',
-                }}
-              >
-                {generalError}
-              </Text>
-            </View>
-          ) : null}
+          <Text style={styles.requiredNote}>* Campos obligatorios</Text>
 
           <View style={styles.form}>
             <Text style={styles.sectionTitle}>Información personal</Text>
@@ -205,10 +180,11 @@ export const EditProfileScreen: React.FC<ScreenPropsWithRoute> = ({
 
           <View style={styles.actions}>
             <Button
-              title={isLoading ? 'Guardando...' : 'Guardar cambios'}
+              title="Guardar cambios"
               onPress={handleSave}
               fullWidth
               size="lg"
+              isLoading={isLoading}
               disabled={isLoading}
             />
             <Button

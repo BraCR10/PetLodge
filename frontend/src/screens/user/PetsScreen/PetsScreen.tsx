@@ -7,11 +7,14 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Modal,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Button } from '@/src/components/ui/Button';
+import { Toast } from '@/src/components/ui/Toast';
 import { Card } from '@/src/components/ui/Card';
 import { Spacing, Colors } from '@/src/utils/theme';
+import { useToast } from '@/src/hooks/useToast';
 import { Mascota, ScreenProps } from '@/src/types';
 import { petsService } from '@/src/services/api/pets.service';
 import { styles } from './PetsScreen.styles';
@@ -19,7 +22,9 @@ import { styles } from './PetsScreen.styles';
 export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [pets, setPets] = useState<Mascota[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast, showToast } = useToast();
 
   const isSupabaseUrl = (url: string) => {
     return url.includes('supabase.co') || url.includes('.storage');
@@ -75,20 +80,23 @@ export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
       'Eliminar mascota',
       `¿Estás seguro de que quieres eliminar a ${petName}?`,
       [
-        { text: 'Cancelar', onPress: () => {} },
+        { text: 'Cancelar' },
         {
           text: 'Eliminar',
+          style: 'destructive',
           onPress: async () => {
             try {
+              setDeleting(true);
               await petsService.deletePet(petId);
               setPets((prev) => prev.filter((pet) => pet.id !== petId));
-              Alert.alert('Éxito', 'Mascota eliminada correctamente');
+              showToast('Mascota eliminada', 'success');
             } catch (err: any) {
-              const errorMessage = err?.response?.data?.message || err?.message || 'Error al eliminar mascota';
-              Alert.alert('Error', errorMessage);
+              const errorMessage = err?.response?.data?.message || err?.message || 'Hubo un error eliminando la mascota, vuelva a intentar';
+              showToast(errorMessage, 'error');
+            } finally {
+              setDeleting(false);
             }
           },
-          style: 'destructive',
         },
       ]
     );
@@ -121,6 +129,10 @@ export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Modal visible={deleting} transparent animationType="none">
+        <View style={{ flex: 1 }} />
+      </Modal>
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} />
       <FlatList
         ListHeaderComponent={
           <View style={styles.content}>
@@ -199,7 +211,6 @@ export const PetsScreen: React.FC<ScreenProps> = ({ navigation }) => {
             />
           </View>
         }
-        scrollEnabled={false}
       />
     </SafeAreaView>
   );

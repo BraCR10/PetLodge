@@ -4,18 +4,19 @@ import {
   Text,
   SafeAreaView,
   ScrollView,
-  Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   Image,
-  ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Button } from '@/src/components/ui/Button';
+import { Toast } from '@/src/components/ui/Toast';
 import { Input } from '@/src/components/ui/Input';
 import { Card } from '@/src/components/ui/Card';
 import { Spacing, Colors } from '@/src/utils/theme';
+import { useToast } from '@/src/hooks/useToast';
 import { Mascota, SexoMascota, TamañoMascota, ScreenPropsWithRoute } from '@/src/types';
 import { petsService } from '@/src/services/api/pets.service';
 import { styles } from './EditPetScreen.styles';
@@ -26,10 +27,12 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
   // Basic information
   const [nombre, setNombre] = useState('');
   const [tipo, setTipo] = useState('');
+  const [tipoOtro, setTipoOtro] = useState('');
   const [raza, setRaza] = useState('');
   const [anos, setAnos] = useState('');
   const [meses, setMeses] = useState('');
   
+
   // Physical characteristics
   const [sexo, setSexo] = useState<SexoMascota>('MACHO');
   const [tamaño, setTamaño] = useState<TamañoMascota>('MEDIANO');
@@ -47,11 +50,21 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = Boolean(mascota);
+  const { toast, showToast } = useToast();
+
+  const STANDARD_TIPOS = ['PERRO', 'GATO', 'CONEJO', 'PAJARO'];
 
   useEffect(() => {
     if (mascota) {
       setNombre(mascota.nombre);
-      setTipo(mascota.tipo.toUpperCase());
+      const tipoUpper = mascota.tipo.toUpperCase();
+      if (STANDARD_TIPOS.includes(tipoUpper)) {
+        setTipo(tipoUpper);
+        setTipoOtro('');
+      } else {
+        setTipo('OTRO');
+        setTipoOtro(mascota.tipo);
+      }
       setRaza(mascota.raza);
       setAnos(String(mascota.años));
       setMeses(String(mascota.meses));
@@ -70,18 +83,22 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!nombre.trim()) newErrors.nombre = 'El nombre es requerido';
+    if (!nombre.trim() || nombre.trim().length < 2) newErrors.nombre = 'El nombre debe tener al menos 2 caracteres';
     if (!tipo) newErrors.tipo = 'El tipo es requerido';
+    if (tipo === 'OTRO' && !tipoOtro.trim()) newErrors.tipoOtro = 'Indica qué tipo de animal es';
+    else if (tipo === 'OTRO' && tipoOtro.trim().length < 2) newErrors.tipoOtro = 'El tipo debe tener al menos 2 caracteres';
     if (!raza.trim()) newErrors.raza = 'La raza es requerida';
-    if (!anos) newErrors.anos = 'Los años son requeridos';
+    if (anos === '') newErrors.anos = 'Los años son requeridos';
     else if (isNaN(Number(anos)) || Number(anos) < 0) newErrors.anos = 'Los años deben ser un número válido';
-    if (!meses) newErrors.meses = 'Los meses son requeridos';
-    else if (isNaN(Number(meses)) || Number(meses) < 0 || Number(meses) > 11) newErrors.meses = 'Los meses deben ser entre 0 y 11';
-    
+    if (meses !== '' && (isNaN(Number(meses)) || Number(meses) < 0 || Number(meses) > 11)) {
+      newErrors.meses = 'Los meses deben ser entre 0 y 11';
+    }
+    if (Number(anos) === 0 && (meses === '' || Number(meses) === 0)) {
+      newErrors.meses = 'La edad no puede ser 0 años y 0 meses';
+    }
     if (!estadoVacunacion.trim()) newErrors.estadoVacunacion = 'El estado de vacunación es requerido';
-    if (!condicionesMedicas.trim()) newErrors.condicionesMedicas = 'Las condiciones médicas son requeridas';
-    if (!numeroVeterinario.trim()) newErrors.numeroVeterinario = 'El número del veterinario es requerido';
-    if (!cuidadosEspeciales.trim()) newErrors.cuidadosEspeciales = 'Los cuidados especiales son requeridos';
+    if (!numeroVeterinario.trim()) newErrors.numeroVeterinario = 'El número de veterinario es requerido';
+    else if (!/^\+?[\d\s\-()]{7,20}$/.test(numeroVeterinario.trim())) newErrors.numeroVeterinario = 'Formato inválido (ej: +506 2234-5678)';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -93,11 +110,12 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
     try {
       setIsSubmitting(true);
 
+      const tipoToSend = tipo === 'OTRO' ? tipoOtro.trim() : tipo;
+
       if (isEditMode) {
-        // Update existing pet
         await petsService.updatePet(mascota.id, {
           nombre: nombre.trim(),
-          tipo,
+          tipo: tipoToSend,
           raza: raza.trim(),
           anos: Number(anos),
           meses: Number(meses),
@@ -109,14 +127,10 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
           cuidadosEspeciales: cuidadosEspeciales.trim(),
           foto: foto || undefined,
         });
-        Alert.alert('✅ Éxito', 'Mascota actualizada correctamente', [
-          { text: 'OK', onPress: () => navigation.navigate('Pets') }
-        ]);
       } else {
-        // Create new pet
         await petsService.createPet({
           nombre: nombre.trim(),
-          tipo,
+          tipo: tipoToSend,
           raza: raza.trim(),
           anos: Number(anos),
           meses: Number(meses),
@@ -128,15 +142,16 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
           cuidadosEspeciales: cuidadosEspeciales.trim(),
           foto,
         });
-        Alert.alert('✅ Éxito', 'Mascota creada correctamente', [
-          { text: 'OK', onPress: () => navigation.navigate('Pets') }
-        ]);
       }
+      const successMessage = isEditMode ? 'Mascota actualizada' : 'Mascota creada';
+      showToast(successMessage, 'success', () => {
+        setIsSubmitting(false);
+        navigation.goBack();
+      }, 800);
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 
-        (isEditMode ? 'Error al actualizar mascota' : 'Error al crear mascota');
-      Alert.alert('❌ Error', errorMessage);
-    } finally {
+      const errorMessage = err?.response?.data?.message || err?.message ||
+        (isEditMode ? 'Hubo un error actualizando la mascota, vuelva a intentar' : 'Hubo un error creando la mascota, vuelva a intentar');
+      showToast(errorMessage, 'error');
       setIsSubmitting(false);
     }
   };
@@ -162,11 +177,10 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
 
   const pickImage = async () => {
     try {
-      // Request permissions first
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
+
       if (status !== 'granted') {
-        Alert.alert('Permiso denegado', 'Se necesita acceso a la galería para seleccionar imágenes');
+        showToast('Se necesita acceso a la galería para seleccionar imágenes', 'error');
         return;
       }
 
@@ -181,9 +195,10 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
         const uri = result.assets[0].uri;
         setFotoUri(uri);
         setFoto({ uri, isPicker: true });
+        setErrors((prev) => ({ ...prev, foto: '' }));
       }
-    } catch (error) {
-      Alert.alert('Error', `${error instanceof Error ? error.message : 'No se pudo seleccionar la imagen'}`);
+    } catch {
+      showToast('No se pudo seleccionar la imagen', 'error');
     }
   };
 
@@ -193,11 +208,16 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
       behavior={Platform.OS === 'android' ? 'height' : undefined}
       style={styles.container}
     >
+      <Modal visible={isSubmitting} transparent animationType="none">
+        <View style={{ flex: 1 }} />
+      </Modal>
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} />
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>
             {isEditMode ? 'Editar mascota' : 'Añadir nueva mascota'}
           </Text>
+          <Text style={styles.requiredNote}>* Campos obligatorios</Text>
 
           <View style={styles.form}>
             {/* Basic Information Section */}
@@ -213,7 +233,9 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
             />
 
             <View style={styles.typeContainer}>
-              <Text style={styles.label}>Tipo de mascota</Text>
+              <Text style={styles.label}>
+                Tipo de mascota<Text style={styles.required}> *</Text>
+              </Text>
               <Card padding={Spacing.md} margin={0}>
                 <View style={styles.tipoGrid}>
                   {tipoOptions.map((option) => (
@@ -232,6 +254,20 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
               </Card>
               {errors.tipo && <Text style={styles.errorText}>{errors.tipo}</Text>}
             </View>
+
+            {tipo === 'OTRO' && (
+              <Input
+                label="¿Qué tipo de animal es?"
+                placeholder="p. ej., Tortuga, Pez, Hamster"
+                value={tipoOtro}
+                onChangeText={(val) => {
+                  setTipoOtro(val);
+                  setErrors((prev) => ({ ...prev, tipoOtro: '' }));
+                }}
+                error={errors.tipoOtro}
+                required
+              />
+            )}
 
             <Input
               label="Raza"
@@ -320,6 +356,7 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
               onChangeText={setEstadoVacunacion}
               error={errors.estadoVacunacion}
               multiline
+              required
             />
 
             <Input
@@ -339,6 +376,7 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
               onChangeText={setNumeroVeterinario}
               error={errors.numeroVeterinario}
               keyboardType="phone-pad"
+              required
             />
 
             {/* Care Information Section */}
@@ -384,10 +422,11 @@ export const EditPetScreen: React.FC<ScreenPropsWithRoute> = ({ navigation, rout
 
           <View style={styles.actions}>
             <Button
-              title={isSubmitting ? 'Guardando...' : (isEditMode ? 'Actualizar mascota' : 'Añadir mascota')}
+              title={isEditMode ? 'Actualizar mascota' : 'Añadir mascota'}
               onPress={handleSave}
               fullWidth
               size="lg"
+              isLoading={isSubmitting}
               disabled={isSubmitting}
             />
             <Button

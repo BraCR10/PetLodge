@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { Colors, Spacing, Typography } from '@/src/utils/theme';
+import { Colors, Spacing, Typography, BorderRadius } from '@/src/utils/theme';
 
 export const styles = StyleSheet.create({
   container: {
@@ -14,7 +14,37 @@ export const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   header: {
-    marginBottom: Spacing.xl,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  filterRow: {
+    marginBottom: Spacing.lg,
+  },
+  filterContent: {
+    gap: Spacing.sm,
+    paddingRight: Spacing.sm,
+  },
+  filterChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  filterChipActive: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
+  },
+  filterChipText: {
+    ...Typography.bodySmall,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  filterChipTextActive: {
+    color: Colors.background,
   },
   title: {
     ...Typography.h2,

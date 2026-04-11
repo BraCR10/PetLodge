@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { Spacing } from '@/src/utils/theme';
@@ -22,24 +23,26 @@ export const HomeScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [reservationsCount, setReservationsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchCounts = async () => {
-      try {
-        const [pets, reservations] = await Promise.all([
-          petsService.getPets(),
-          reservationsService.getReservations(),
-        ]);
-        setPetsCount(pets.length);
-        setReservationsCount(reservations.length);
-      } catch (error) {
-        console.error('Error fetching counts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  useFocusEffect(
+    useCallback(() => {
+      const fetchCounts = async () => {
+        try {
+          const [pets, reservations] = await Promise.all([
+            petsService.getPets(),
+            reservationsService.getReservations(),
+          ]);
+          setPetsCount(pets.length);
+          setReservationsCount(reservations.length);
+        } catch (error) {
+          console.error('Error fetching counts:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    fetchCounts();
-  }, []);
+      fetchCounts();
+    }, [])
+  );
 
   const quickActions = [
     {

@@ -13,7 +13,15 @@ export const styles = StyleSheet.create({
     ...Typography.h2,
     fontWeight: '700',
     color: Colors.primary,
+    marginBottom: Spacing.xs,
+  },
+  requiredNote: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
     marginBottom: Spacing.xl,
+  },
+  required: {
+    color: Colors.error,
   },
   sectionTitle: {
     ...Typography.h3,

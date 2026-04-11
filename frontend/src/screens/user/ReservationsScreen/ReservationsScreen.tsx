@@ -5,6 +5,8 @@ import {
   SafeAreaView,
   FlatList,
   Alert,
+  ScrollView,
+  Pressable,
   ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -15,10 +17,31 @@ import { Reserva, EstadoReserva, ScreenProps } from '@/src/types';
 import { reservationsService } from '@/src/services/api/reservations.service';
 import { styles } from './ReservationsScreen.styles';
 
+type FilterType = 'all' | 'active' | 'completed' | 'cancelled';
+
+const FILTER_LABELS: Record<FilterType, string> = {
+  all: 'Todas',
+  active: 'Activas',
+  completed: 'Completadas',
+  cancelled: 'Canceladas',
+};
+
+const getStatusPriority = (estado: EstadoReserva): number => {
+  const n = String(estado).toUpperCase().replace(/ /g, '_');
+  switch (n) {
+    case 'CONFIRMADA': return 1;
+    case 'EN_PROGRESO': return 2;
+    case 'COMPLETADA': return 3;
+    case 'CANCELADA': return 4;
+    default: return 5;
+  }
+};
+
 export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [reservations, setReservations] = useState<Reserva[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FilterType>('all');
 
   const loadReservations = async () => {
     try {
@@ -45,6 +68,16 @@ export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
     }, [])
   );
 
+  const filteredReservations = reservations
+    .filter((r) => {
+      if (filter === 'all') return true;
+      const n = String(r.estado).toUpperCase().replace(/ /g, '_');
+      if (filter === 'active') return n === 'CONFIRMADA' || n === 'EN_PROGRESO';
+      if (filter === 'completed') return n === 'COMPLETADA';
+      return n === 'CANCELADA';
+    })
+    .sort((a, b) => getStatusPriority(a.estado) - getStatusPriority(b.estado));
+
   const handleCancelReservation = async (resId: string, nombreMascota: string) => {
     Alert.alert(
       'Cancelar reserva',
@@ -56,10 +89,7 @@ export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
           onPress: async () => {
             try {
               await reservationsService.cancelReservation(resId);
-              setReservations((prev) =>
-                prev.filter((reservation) => reservation.id !== resId)
-              );
-              Alert.alert('Éxito', 'Reserva cancelada correctamente');
+              await loadReservations();
             } catch (err: any) {
               const errorMessage = err?.response?.data?.message || err?.message || 'Error al cancelar reserva';
               Alert.alert('Error', errorMessage);
@@ -131,9 +161,27 @@ export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
                   style={styles.addButton}
                 />
               </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.filterRow}
+                contentContainerStyle={styles.filterContent}
+              >
+                {(Object.keys(FILTER_LABELS) as FilterType[]).map((f) => (
+                  <Pressable
+                    key={f}
+                    onPress={() => setFilter(f)}
+                    style={[styles.filterChip, filter === f && styles.filterChipActive]}
+                  >
+                    <Text style={[styles.filterChipText, filter === f && styles.filterChipTextActive]}>
+                      {FILTER_LABELS[f]}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
             </View>
           }
-          data={reservations}
+          data={filteredReservations}
           renderItem={({ item }) => (
             <View style={[styles.content, styles.contentNoVerticalPadding]}>
               <Card padding={Spacing.md} margin={0}>
@@ -199,7 +247,6 @@ export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
               />
             </View>
           }
-          scrollEnabled={false}
         />
       )}
     </SafeAreaView>

@@ -4,8 +4,8 @@ import {
   Text,
   SafeAreaView,
   ScrollView,
-  Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ActivityIndicator,
@@ -13,15 +13,35 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import { Button } from '@/src/components/ui/Button';
+import { Toast } from '@/src/components/ui/Toast';
 import { Input } from '@/src/components/ui/Input';
+import { useToast } from '@/src/hooks/useToast';
 import { Mascota, Habitacion, ScreenProps } from '@/src/types';
 import { petsService } from '@/src/services/api/pets.service';
 import { roomsService } from '@/src/services/api/rooms.service';
 import { reservationsService } from '@/src/services/api/reservations.service';
-import { Colors } from '@/src/utils/theme';
+import { Colors, Spacing } from '@/src/utils/theme';
 import { styles } from './NewReservationScreen.styles';
 
 const isWeb = Platform.OS === 'web';
+
+const PET_AVATAR_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#A78BFA'];
+
+const getPetInitials = (nombre: string) =>
+  nombre.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+
+const getPetAvatarColor = (nombre: string) =>
+  PET_AVATAR_COLORS[nombre.charCodeAt(0) % PET_AVATAR_COLORS.length];
+
+const getPetTypeLabel = (tipo: string): string => {
+  switch (tipo.toLowerCase()) {
+    case 'perro': return 'Perro';
+    case 'gato': return 'Gato';
+    case 'conejo': return 'Conejo';
+    case 'pajaro': return 'Pájaro';
+    default: return tipo;
+  }
+};
 
 export const NewReservationScreen: React.FC<ScreenProps> = ({
   navigation,
@@ -32,6 +52,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast, showToast } = useToast();
 
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [fechaEntrada, setFechaEntrada] = useState<Date | null>(null);
@@ -94,7 +115,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
       setRoomsSearched(true); // Mark that we've searched
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar habitaciones';
-      Alert.alert('Error', errorMessage);
+      showToast(errorMessage, 'error');
       setRoomsSearched(true); // Mark that we attempted a search
     } finally {
       setLoadingRooms(false);
@@ -114,25 +135,31 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     if (!selectedPetId) newErrors.mascota = 'Por favor selecciona una mascota';
-    
+
     if (isWeb) {
+      const todayStr = format(today, 'yyyy-MM-dd');
       if (!fechaEntradaWeb) newErrors.fechaEntrada = 'La fecha de entrada es requerida';
+      else if (fechaEntradaWeb < todayStr) newErrors.fechaEntrada = 'La fecha de entrada no puede ser en el pasado';
       if (!fechaSalidaWeb) newErrors.fechaSalida = 'La fecha de salida es requerida';
-      else if (fechaEntradaWeb && fechaSalidaWeb && fechaSalidaWeb <= fechaEntradaWeb) {
+      else if (fechaSalidaWeb < todayStr) newErrors.fechaSalida = 'La fecha de salida no puede ser en el pasado';
+      else if (fechaEntradaWeb && fechaSalidaWeb <= fechaEntradaWeb) {
         newErrors.fechaSalida = 'La salida debe ser después de la entrada';
       }
     } else {
       if (!fechaEntrada) newErrors.fechaEntrada = 'La fecha de entrada es requerida';
+      else if (fechaEntrada < today) newErrors.fechaEntrada = 'La fecha de entrada no puede ser en el pasado';
       if (!fechaSalida) newErrors.fechaSalida = 'La fecha de salida es requerida';
-      else if (fechaEntrada && fechaSalida && fechaSalida <= fechaEntrada) {
+      else if (fechaEntrada && fechaSalida <= fechaEntrada) {
         newErrors.fechaSalida = 'La salida debe ser después de la entrada';
       }
     }
 
     if (!selectedHabitacionId) newErrors.habitacion = 'Por favor selecciona una habitación';
-    
+
     if (esEspecial && serviciosAdicionales.length === 0) {
       newErrors.servicios = 'Por favor especifica al menos un servicio adicional';
     }
@@ -199,11 +226,13 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
         serviciosAdicionales: esEspecial ? serviciosAdicionales : undefined,
       });
 
-      navigation.navigate('Reservations');
+      showToast('Reserva creada', 'success', () => {
+        setIsSubmitting(false);
+        navigation.goBack();
+      }, 800);
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 'Error al crear reserva';
-      Alert.alert('Error', errorMessage);
-    } finally {
+      const errorMessage = err?.response?.data?.message || err?.message || 'Hubo un error creando la reserva, vuelva a intentar';
+      showToast(errorMessage, 'error');
       setIsSubmitting(false);
     }
   };
@@ -223,9 +252,14 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
       behavior={Platform.OS === 'android' ? 'height' : undefined}
       style={styles.container}
     >
+      <Modal visible={isSubmitting} transparent animationType="none">
+        <View style={{ flex: 1 }} />
+      </Modal>
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} />
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>Nueva reserva</Text>
+          <Text style={styles.requiredNote}>* Campos obligatorios</Text>
 
           {generalError && (
             <View style={{ backgroundColor: Colors.error + '20', padding: 12, borderRadius: 8, marginBottom: 16 }}>
@@ -234,13 +268,15 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
           )}
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Seleccionar mascota</Text>
+            <Text style={styles.sectionTitle}>
+              Seleccionar mascota<Text style={styles.required}> *</Text>
+            </Text>
             {errors.mascota && (
               <Text style={styles.errorText}>
                 {errors.mascota}
               </Text>
             )}
-            <View style={styles.petSelector}>
+            <View style={styles.petGrid}>
               {pets.length === 0 ? (
                 <Text style={styles.errorText}>No tienes mascotas registradas</Text>
               ) : (
@@ -248,17 +284,22 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
                   <Pressable
                     key={mascota.id}
                     onPress={() => setSelectedPetId(mascota.id)}
-                    style={[
-                      styles.petOption,
-                      selectedPetId === mascota.id && styles.petOptionSelected,
-                    ]}
+                    style={[styles.petCard, selectedPetId === mascota.id && styles.petCardSelected]}
                   >
-                    <Text style={styles.petOptionText}>
-                      {mascota.nombre} • {mascota.raza}
-                    </Text>
-                    <Text style={styles.petOptionIcon}>
-                      {mascota.tipo === 'perro' ? '🐕' : mascota.tipo === 'gato' ? '🐈' : '🐾'}
-                    </Text>
+                    <View style={[styles.petAvatar, { backgroundColor: getPetAvatarColor(mascota.nombre) }]}>
+                      <Text style={styles.petAvatarText}>{getPetInitials(mascota.nombre)}</Text>
+                    </View>
+                    <View style={styles.petCardInfo}>
+                      <Text style={styles.petCardName}>{mascota.nombre}</Text>
+                      <Text style={styles.petCardBreed}>
+                        {mascota.raza} · {getPetTypeLabel(mascota.tipo)}
+                      </Text>
+                    </View>
+                    {selectedPetId === mascota.id && (
+                      <View style={styles.petCardCheck}>
+                        <Text style={styles.petCardCheckText}>✓</Text>
+                      </View>
+                    )}
                   </Pressable>
                 ))
               )}
@@ -292,7 +333,9 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
                   onPress={() => setShowCheckInPicker(true)}
                   style={styles.dateButton}
                 >
-                  <Text style={styles.dateButtonLabel}>Fecha de entrada</Text>
+                  <Text style={styles.dateButtonLabel}>
+                    Fecha de entrada<Text style={styles.required}> *</Text>
+                  </Text>
                   <Text style={styles.dateButtonValue}>
                     {fechaEntrada ? format(fechaEntrada, 'dd/MM/yyyy') : 'Seleccionar fecha'}
                   </Text>
@@ -306,6 +349,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
                     value={fechaEntrada || new Date()}
                     mode="date"
                     display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    minimumDate={new Date()}
                     onChange={handleCheckInDateChange}
                   />
                 )}
@@ -314,7 +358,9 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
                   onPress={() => setShowCheckOutPicker(true)}
                   style={styles.dateButton}
                 >
-                  <Text style={styles.dateButtonLabel}>Fecha de salida</Text>
+                  <Text style={styles.dateButtonLabel}>
+                    Fecha de salida<Text style={styles.required}> *</Text>
+                  </Text>
                   <Text style={styles.dateButtonValue}>
                     {fechaSalida ? format(fechaSalida, 'dd/MM/yyyy') : 'Seleccionar fecha'}
                   </Text>
@@ -328,6 +374,7 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
                     value={fechaSalida || new Date()}
                     mode="date"
                     display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    minimumDate={new Date()}
                     onChange={handleCheckOutDateChange}
                   />
                 )}
@@ -359,29 +406,49 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
 
               {roomsSearched && (
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Seleccionar habitación</Text>
+                  <View style={styles.roomSectionHeader}>
+                    <Text style={styles.sectionTitle}>
+                      Seleccionar habitación<Text style={styles.required}> *</Text>
+                    </Text>
+                    {rooms.length > 0 && (
+                      <Text style={styles.roomCount}>{rooms.length} disponibles</Text>
+                    )}
+                  </View>
                   {errors.habitacion && (
                     <Text style={styles.errorText}>{errors.habitacion}</Text>
                   )}
-                  <View style={styles.roomSelector}>
-                    {rooms.length === 0 ? (
-                      <Text style={styles.errorText}>No hay habitaciones disponibles para estas fechas</Text>
-                    ) : (
-                      rooms.map((room) => (
-                        <Pressable
-                          key={room.id}
-                          onPress={() => setSelectedHabitacionId(room.id)}
-                          style={[
-                            styles.roomOption,
-                            selectedHabitacionId === room.id && styles.roomOptionSelected,
-                          ]}
-                          disabled={loadingRooms}
-                        >
-                          <Text style={styles.roomOptionText}>{room.name}</Text>
-                        </Pressable>
-                      ))
-                    )}
-                  </View>
+                  {rooms.length === 0 ? (
+                    <View style={styles.roomEmptyState}>
+                      <Text style={styles.roomEmptyIcon}>🔍</Text>
+                      <Text style={styles.roomEmptyText}>
+                        No hay habitaciones disponibles para estas fechas
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={styles.roomChipGrid}>
+                      {rooms.map((room) => {
+                        const isSelected = selectedHabitacionId === room.id;
+                        return (
+                          <Pressable
+                            key={room.id}
+                            onPress={() => setSelectedHabitacionId(room.id)}
+                            style={[styles.roomChip, isSelected && styles.roomChipSelected]}
+                            disabled={loadingRooms}
+                          >
+                            <Text style={[styles.roomChipPrefix, isSelected && styles.roomChipPrefixSelected]}>
+                              Hab.
+                            </Text>
+                            <Text style={[styles.roomChipNumber, isSelected && styles.roomChipNumberSelected]}>
+                              {room.name}
+                            </Text>
+                            {isSelected && (
+                              <Text style={styles.roomChipCheck}> ✓</Text>
+                            )}
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  )}
                 </View>
               )}
 
@@ -460,12 +527,57 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
             </>
           )}
 
+          <View style={styles.checklist}>
+            <Text style={styles.checklistTitle}>Para completar tu reserva:</Text>
+
+            <View style={styles.checklistRow}>
+              <View style={[styles.checklistDot, selectedPetId && styles.checklistDotDone]}>
+                {selectedPetId && <Text style={styles.checklistDotCheck}>✓</Text>}
+              </View>
+              <Text style={[styles.checklistText, selectedPetId && styles.checklistTextDone]}>
+                {selectedPetId
+                  ? `Mascota: ${pets.find((p) => p.id === selectedPetId)?.nombre}`
+                  : 'Selecciona una mascota'}
+              </Text>
+            </View>
+
+            <View style={styles.checklistRow}>
+              <View style={[styles.checklistDot, (datesSelected && calculateNights() > 0) && styles.checklistDotDone]}>
+                {datesSelected && calculateNights() > 0 && <Text style={styles.checklistDotCheck}>✓</Text>}
+              </View>
+              <Text style={[styles.checklistText, (datesSelected && calculateNights() > 0) && styles.checklistTextDone]}>
+                {datesSelected && calculateNights() > 0
+                  ? `Número de noches: ${calculateNights()}`
+                  : 'Selecciona fechas de entrada y salida'}
+              </Text>
+            </View>
+
+            <View>
+              <View style={styles.checklistRow}>
+                <View style={[styles.checklistDot, selectedHabitacionId && styles.checklistDotDone]}>
+                  {selectedHabitacionId && <Text style={styles.checklistDotCheck}>✓</Text>}
+                </View>
+                <Text style={[styles.checklistText, selectedHabitacionId && styles.checklistTextDone]}>
+                  {selectedHabitacionId
+                    ? `Habitación: ${rooms.find((r) => r.id === selectedHabitacionId)?.name}`
+                    : 'Selecciona una habitación'}
+                </Text>
+              </View>
+              {!selectedHabitacionId && datesSelected && calculateNights() > 0 && !roomsSearched && (
+                <Text style={styles.checklistHint}>
+                  Primero busca habitaciones disponibles para tus fechas
+                </Text>
+              )}
+            </View>
+          </View>
+
           <View style={styles.actions}>
             <Button
-              title={isSubmitting ? 'Creando...' : 'Crear reserva'}
+              title="Crear reserva"
               onPress={handleSubmit}
               fullWidth
               size="lg"
+              isLoading={isSubmitting}
               disabled={isSubmitting}
             />
             <Button
