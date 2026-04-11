@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -26,7 +25,6 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
       }),
       inject: [ConfigService],
     }),
-    ScheduleModule.forRoot(),
     LoggerModule,
     PrismaModule,
     StorageModule,
