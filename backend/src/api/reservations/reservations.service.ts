@@ -94,6 +94,10 @@ export class ReservationsService {
     return this.toResponse(reservation);
   }
 
+  getStatuses(): ReservationStatus[] {
+    return Object.values(ReservationStatus);
+  }
+
   async findAll(userId: string, estado?: ReservationStatus) {
     const reservations = await this.prisma.reservation.findMany({
       where: {
