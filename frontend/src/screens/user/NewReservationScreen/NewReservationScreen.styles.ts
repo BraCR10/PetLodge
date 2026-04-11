@@ -376,4 +376,18 @@ export const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
   },
+  roomChipUnavailable: {
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+    opacity: 0.45,
+  },
+  roomChipTextUnavailable: {
+    color: Colors.textSecondary,
+  },
+  roomChipUnavailableLabel: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    fontSize: 10,
+    marginLeft: 2,
+  },
 });

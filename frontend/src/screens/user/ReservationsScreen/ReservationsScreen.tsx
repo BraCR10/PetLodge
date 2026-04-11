@@ -17,14 +17,7 @@ import { Reserva, EstadoReserva, ScreenProps } from '@/src/types';
 import { reservationsService } from '@/src/services/api/reservations.service';
 import { styles } from './ReservationsScreen.styles';
 
-type FilterType = 'all' | 'active' | 'completed' | 'cancelled';
-
-const FILTER_LABELS: Record<FilterType, string> = {
-  all: 'Todas',
-  active: 'Activas',
-  completed: 'Completadas',
-  cancelled: 'Canceladas',
-};
+type FilterType = 'all' | string;
 
 const getStatusPriority = (estado: EstadoReserva): number => {
   const n = String(estado).toUpperCase().replace(/ /g, '_');
@@ -39,16 +32,22 @@ const getStatusPriority = (estado: EstadoReserva): number => {
 
 export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const [reservations, setReservations] = useState<Reserva[]>([]);
+  const [statuses, setStatuses] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
 
-  const loadReservations = async () => {
+  const loadReservations = async (currentFilter: FilterType = 'all') => {
     try {
       setLoading(true);
       setError(null);
-      const data = await reservationsService.getReservations();
+      const estado = currentFilter === 'all' ? undefined : currentFilter;
+      const [data, statusList] = await Promise.all([
+        reservationsService.getReservations(estado),
+        reservationsService.getStatuses(),
+      ]);
       setReservations(data as Reserva[]);
+      setStatuses(statusList);
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar reservas';
       setError(errorMessage);
@@ -58,24 +57,17 @@ export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
   };
 
   useEffect(() => {
-    loadReservations();
-  }, []);
+    loadReservations(filter);
+  }, [filter]);
 
   // Refresh when screen is focused (e.g., returning from detail screen)
   useFocusEffect(
     React.useCallback(() => {
-      loadReservations();
-    }, [])
+      loadReservations(filter);
+    }, [filter])
   );
 
-  const filteredReservations = reservations
-    .filter((r) => {
-      if (filter === 'all') return true;
-      const n = String(r.estado).toUpperCase().replace(/ /g, '_');
-      if (filter === 'active') return n === 'CONFIRMADA' || n === 'EN_PROGRESO';
-      if (filter === 'completed') return n === 'COMPLETADA';
-      return n === 'CANCELADA';
-    })
+  const filteredReservations = [...reservations]
     .sort((a, b) => getStatusPriority(a.estado) - getStatusPriority(b.estado));
 
   const handleCancelReservation = async (resId: string, nombreMascota: string) => {
@@ -150,6 +142,7 @@ export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
         </View>
       ) : (
         <FlatList
+          extraData={{ statuses, filter }}
           ListHeaderComponent={
             <View style={styles.content}>
               <View style={styles.header}>
@@ -167,14 +160,23 @@ export const ReservationsScreen: React.FC<ScreenProps> = ({ navigation }) => {
                 style={styles.filterRow}
                 contentContainerStyle={styles.filterContent}
               >
-                {(Object.keys(FILTER_LABELS) as FilterType[]).map((f) => (
+                <Pressable
+                  key="all"
+                  onPress={() => setFilter('all')}
+                  style={[styles.filterChip, filter === 'all' && styles.filterChipActive]}
+                >
+                  <Text style={[styles.filterChipText, filter === 'all' && styles.filterChipTextActive]}>
+                    Todas
+                  </Text>
+                </Pressable>
+                {statuses.map((status) => (
                   <Pressable
-                    key={f}
-                    onPress={() => setFilter(f)}
-                    style={[styles.filterChip, filter === f && styles.filterChipActive]}
+                    key={status}
+                    onPress={() => setFilter(status)}
+                    style={[styles.filterChip, filter === status && styles.filterChipActive]}
                   >
-                    <Text style={[styles.filterChipText, filter === f && styles.filterChipTextActive]}>
-                      {FILTER_LABELS[f]}
+                    <Text style={[styles.filterChipText, filter === status && styles.filterChipTextActive]}>
+                      {getStatusLabel(status as EstadoReserva)}
                     </Text>
                   </Pressable>
                 ))}

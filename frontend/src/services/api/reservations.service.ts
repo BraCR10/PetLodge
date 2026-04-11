@@ -85,6 +85,18 @@ export const reservationsService = {
   },
 
   /**
+   * Get all available reservation statuses from the backend
+   */
+  async getStatuses(): Promise<string[]> {
+    try {
+      const response = await apiClient.get<string[]>('/reservations/statuses');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
    * Cancel a reservation
    */
   async cancelReservation(id: string): Promise<void> {

@@ -11,12 +11,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { Button } from '@/src/components/ui/Button';
 import { Toast } from '@/src/components/ui/Toast';
 import { Input } from '@/src/components/ui/Input';
 import { useToast } from '@/src/hooks/useToast';
-import { Mascota, Habitacion, ScreenProps } from '@/src/types';
+import { Mascota, ScreenProps } from '@/src/types';
 import { petsService } from '@/src/services/api/pets.service';
 import { roomsService } from '@/src/services/api/rooms.service';
 import { reservationsService } from '@/src/services/api/reservations.service';
@@ -47,7 +47,9 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
   navigation,
 }) => {
   const [pets, setPets] = useState<Mascota[]>([]);
-  const [rooms, setRooms] = useState<Habitacion[]>([]);
+  const [rooms, setRooms] = useState<Array<{ id: string; name: string; disponible?: boolean }>>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loadingPets, setLoadingPets] = useState(true);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -92,8 +94,8 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
     }
   };
 
-  // Load rooms when dates are selected
-  const loadAvailableRooms = async () => {
+  // Load rooms when dates are selected. page=1 replaces list; page>1 appends (load more).
+  const loadAvailableRooms = async (page: number = 1) => {
     if (isWeb) {
       if (!fechaEntradaWeb || !fechaSalidaWeb) return;
     } else {
@@ -104,19 +106,27 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
       setLoadingRooms(true);
       const fromDate = isWeb ? fechaEntradaWeb : format(fechaEntrada!, 'yyyy-MM-dd');
       const toDate = isWeb ? fechaSalidaWeb : format(fechaSalida!, 'yyyy-MM-dd');
-      const data = await roomsService.getAvailableRooms(fromDate, toDate);
-      setRooms(
-        data.map((room) => ({
-          id: room.id,
-          name: room.numero,
-        }))
-      );
-      setSelectedHabitacionId(null); // Reset room selection when dates change
-      setRoomsSearched(true); // Mark that we've searched
+      const response = await roomsService.getRooms(page, fromDate, toDate);
+      const newRooms = response.data.map((room) => ({
+        id: room.id,
+        name: room.numero,
+        disponible: room.disponible,
+      }));
+
+      if (page === 1) {
+        setRooms(newRooms);
+        setSelectedHabitacionId(null);
+      } else {
+        setRooms((prev) => [...prev, ...newRooms]);
+      }
+
+      setCurrentPage(response.page);
+      setTotalPages(response.totalPages);
+      setRoomsSearched(true);
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar habitaciones';
       showToast(errorMessage, 'error');
-      setRoomsSearched(true); // Mark that we attempted a search
+      setRoomsSearched(true);
     } finally {
       setLoadingRooms(false);
     }
@@ -371,10 +381,10 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
 
                 {showCheckOutPicker && (
                   <DateTimePicker
-                    value={fechaSalida || new Date()}
+                    value={fechaSalida || (fechaEntrada ? addDays(fechaEntrada, 1) : new Date())}
                     mode="date"
                     display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    minimumDate={new Date()}
+                    minimumDate={fechaEntrada ? addDays(fechaEntrada, 1) : new Date()}
                     onChange={handleCheckOutDateChange}
                   />
                 )}
@@ -411,7 +421,9 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
                       Seleccionar habitación<Text style={styles.required}> *</Text>
                     </Text>
                     {rooms.length > 0 && (
-                      <Text style={styles.roomCount}>{rooms.length} disponibles</Text>
+                      <Text style={styles.roomCount}>
+                        {rooms.filter((r) => r.disponible !== false).length} disponibles
+                      </Text>
                     )}
                   </View>
                   {errors.habitacion && (
@@ -420,34 +432,58 @@ export const NewReservationScreen: React.FC<ScreenProps> = ({
                   {rooms.length === 0 ? (
                     <View style={styles.roomEmptyState}>
                       <Text style={styles.roomEmptyIcon}>🔍</Text>
-                      <Text style={styles.roomEmptyText}>
-                        No hay habitaciones disponibles para estas fechas
-                      </Text>
+                      <Text style={styles.roomEmptyText}>No hay habitaciones registradas</Text>
                     </View>
                   ) : (
-                    <View style={styles.roomChipGrid}>
-                      {rooms.map((room) => {
-                        const isSelected = selectedHabitacionId === room.id;
-                        return (
-                          <Pressable
-                            key={room.id}
-                            onPress={() => setSelectedHabitacionId(room.id)}
-                            style={[styles.roomChip, isSelected && styles.roomChipSelected]}
-                            disabled={loadingRooms}
-                          >
-                            <Text style={[styles.roomChipPrefix, isSelected && styles.roomChipPrefixSelected]}>
-                              Hab.
-                            </Text>
-                            <Text style={[styles.roomChipNumber, isSelected && styles.roomChipNumberSelected]}>
-                              {room.name}
-                            </Text>
-                            {isSelected && (
-                              <Text style={styles.roomChipCheck}> ✓</Text>
-                            )}
-                          </Pressable>
-                        );
-                      })}
-                    </View>
+                    <>
+                      <View style={styles.roomChipGrid}>
+                        {rooms.map((room) => {
+                          const isSelected = selectedHabitacionId === room.id;
+                          const isUnavailable = room.disponible === false;
+                          return (
+                            <Pressable
+                              key={room.id}
+                              onPress={() => setSelectedHabitacionId(room.id)}
+                              style={[
+                                styles.roomChip,
+                                isSelected && styles.roomChipSelected,
+                                isUnavailable && styles.roomChipUnavailable,
+                              ]}
+                              disabled={loadingRooms || isUnavailable}
+                            >
+                              <Text style={[
+                                styles.roomChipPrefix,
+                                isSelected && styles.roomChipPrefixSelected,
+                                isUnavailable && styles.roomChipTextUnavailable,
+                              ]}>
+                                Hab.
+                              </Text>
+                              <Text style={[
+                                styles.roomChipNumber,
+                                isSelected && styles.roomChipNumberSelected,
+                                isUnavailable && styles.roomChipTextUnavailable,
+                              ]}>
+                                {room.name}
+                              </Text>
+                              {isSelected && <Text style={styles.roomChipCheck}> ✓</Text>}
+                              {isUnavailable && (
+                                <Text style={styles.roomChipUnavailableLabel}> Ocupada</Text>
+                              )}
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                      {currentPage < totalPages && (
+                        <Button
+                          title="Cargar más habitaciones"
+                          onPress={() => loadAvailableRooms(currentPage + 1)}
+                          isLoading={loadingRooms}
+                          variant="secondary"
+                          fullWidth
+                          style={{ marginTop: Spacing.md }}
+                        />
+                      )}
+                    </>
                   )}
                 </View>
               )}
